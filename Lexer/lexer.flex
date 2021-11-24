@@ -6,8 +6,8 @@
         char *s ;
     } yylval ;
 
-    /* TOKENS */
-    enum tokens {   _IF = 1, _ELSE, _SWITCH, _BREAK, _CONTINUE, _RETURN, _WHILE, _DO_WHILE, _FOR,
+    /* TOKENS (_IF = 1 IN ORDER TO MAKE tokens START FROM 1, INSTEAD OF 0, BECAUSE token_string[0] = "NONE") */
+    enum tokens {   _IF = 1, _ELSE, _SWITCH, _BREAK, _CONTINUE, _RETURN, _WHILE, _DO, _FOR,
                     _DEF, _CONST,
                     _TYPE,
                     _LPAREN, _RPAREN, _LSQBRACK, _RSQBRACK, _LBRACKET, _RBRACKET, _SEMICOLON, _COMMA, _COLON, _ASSIGN, 
@@ -16,7 +16,7 @@
                     _INT_NUMBER, _UINT_NUMBER };
 
     /* TOKEN NAMES */
-    char *token_strings [] = { "NONE", "_IF", "_ELSE", "_SWITCH", "_BREAK", "_CONTINUE", "_RETURN", "_WHILE", "_DO_WHILE", "_FOR",
+    char *token_strings[] = { "NONE", "_IF", "_ELSE", "_SWITCH", "_BREAK", "_CONTINUE", "_RETURN", "_WHILE", "_DO", "_FOR",
                                 "_DEF", "_CONST",
                                 "_TYPE", 
                                 "_LPAREN", "_RPAREN", "_LSQBRACK", "_RSQBRACK", "_LBRACKET", "_RBRACKET", "_SEMICOLON", "_COMMA", "_COLON", "_ASSIGN", 
@@ -31,7 +31,7 @@
                     INT, UINT, VOID};
 
     /* OPERATION NAMES */
-    char *value_strings [] = { "ADD", "SUB", "STAR", "DIV", "MOD",
+    char *value_strings[] = { "ADD", "SUB", "STAR", "DIV", "MOD",
                                 "SL", "SR", "BAND", "BOR", "BXOR",
                                 "AND", "OR",
                                 "LT", "LEQ", "GT", "GEQ", "EQ",
@@ -52,7 +52,7 @@
 "continue"  { return _CONTINUE; }
 "break"     { return _BREAK; }
 "while"     { return _WHILE; }
-"do while"  { return _DO_WHILE; }
+"do"        { return _DO; }
 "for"       { return _FOR; }
 "return"    { return _RETURN; }
 
