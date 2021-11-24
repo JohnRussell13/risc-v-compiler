@@ -15,4 +15,6 @@ int main () {
    for(i=MAX;i>0;i--){
       ptr--;
    }
+   
+   ptr = NULL;
 }
