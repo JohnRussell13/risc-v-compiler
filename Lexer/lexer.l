@@ -11,7 +11,7 @@
                     _DEF, _CONST,
                     _TYPE,
                     _LPAREN, _RPAREN, _LSQBRACK, _RSQBRACK, _LBRACKET, _RBRACKET, _SEMICOLON, _COMMA, _COLON, _ASSIGN, 
-                    _AROP, _RELOP, 
+                    _AROP, _ITER, _RELOP, 
                     _ID,
                     _INT_NUMBER, _UINT_NUMBER };
 
@@ -20,13 +20,14 @@
                                 "_DEF", "_CONST",
                                 "_TYPE", 
                                 "_LPAREN", "_RPAREN", "_LSQBRACK", "_RSQBRACK", "_LBRACKET", "_RBRACKET", "_SEMICOLON", "_COMMA", "_COLON", "_ASSIGN", 
-                                "_AROP", "_RELOP", 
+                                "_AROP", "_ITER", "_RELOP", 
                                 "_ID",
                                 "_INT_NUMBER", "_UINT_NUMBER"};
     /* OPERATIONS */
     enum values {   ADD, SUB, STAR, DIV, MOD,
                     SL, SR, BAND, BOR, BXOR,
                     AND, OR,
+                    INC, DEC,
                     LT, LEQ, GT, GEQ, EQ, 
                     INT, UINT, VOID};
 
@@ -34,6 +35,7 @@
     char *value_strings[] = { "ADD", "SUB", "STAR", "DIV", "MOD",
                                 "SL", "SR", "BAND", "BOR", "BXOR",
                                 "AND", "OR",
+                                "INC", "DEC",
                                 "LT", "LEQ", "GT", "GEQ", "EQ",
                                 "INT", "UINT", "VOID"};
 %}
@@ -90,6 +92,9 @@
 "~"         { yylval.i = BXOR; return _AROP; }
 "&&"        { yylval.i = AND;  return _AROP; }
 "||"        { yylval.i = OR;   return _AROP; }
+
+"++"        { yylval.i = INC;  return _ITER; }
+"--"        { yylval.i = DEC;  return _ITER; }
 
     /* RELATION OPERATIONS */
 "<"         { yylval.i = LT;  return _RELOP; }

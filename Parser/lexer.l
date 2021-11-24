@@ -23,8 +23,9 @@
 "return"    { return _RETURN; }
 
     /* SPECIAL KEYWORDS */
-"#define"|"#DEFINE"    { return _DEF; }
-"const"                { return _CONST;}
+"#define"|"#DEFINE"     { return _DEF; }
+"const"                 { return _CONST;}
+"NULL"|"null"           { return _NULL;}
 
     /* DATA TYPES */
 "int"       { yylval.i = INT;  return _TYPE; }
@@ -56,6 +57,9 @@
 "~"         { yylval.i = BXOR; return _AROP; }
 "&&"        { yylval.i = AND;  return _AROP; }
 "||"        { yylval.i = OR;   return _AROP; }
+
+"++"        { yylval.i = INC;  return _ITER; }
+"--"        { yylval.i = DEC;  return _ITER; }
 
     /* RELATION OPERATIONS */
 "<"         { yylval.i = LT;  return _RELOP; }

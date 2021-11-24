@@ -24,6 +24,7 @@
 %token _FOR
 
 %token _DEF
+%token _NULL
 %token _CONST
 
 %token <i> _TYPE
@@ -40,6 +41,7 @@
 %token _ASSIGN
 
 %token <i> _AROP
+%token <i> _ITER
 %token <i> _RELOP
 
 %token <s> _ID
@@ -69,11 +71,14 @@ function
     : type _ID _LPAREN parameter _RPAREN body
     ;
 type
-    : _TYPE
+    : _TYPE /* MAYBE EXPAND WITH CONST */
     ;
 parameter
     : /* empty */
+    | parameter _COMMA type _ID
     | type _ID
+    | parameter _COMMA type _AROP _ID /* _AROP IS ONLT _STAR !! */
+    | type _AROP _ID /* _AROP IS ONLT _STAR !! */
     ;
 body
     : _LBRACKET variable_list statement_list _RBRACKET
@@ -84,6 +89,12 @@ variable_list
     ;
 variable
     : type _ID _SEMICOLON
+    | type _ID array_member_definition _SEMICOLON /* EXPAND TO ACCENPT NOT JUST literal */
+    | type _AROP _ID _SEMICOLON /* ADD EVERY POSSIBILITY */ /* AROP ONLY _STAR !! */
+    ;
+array_member_definition
+    : array_member_definition _LSQBRACK literal _RSQBRACK
+    | _LSQBRACK literal _RSQBRACK
     ;
 statement_list
     : /* empty */
@@ -94,22 +105,40 @@ statement
     | assignment_statement
     | if_statement
     | return_statement
+    | while_statement
+    | for_statement
+    | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
     ;
 compound_statement
     : _LBRACKET statement_list _RBRACKET
     ;
 assignment_statement
-    : _ID _ASSIGN num_exp _SEMICOLON
+    : data _ASSIGN num_exp _SEMICOLON
+    | data _ITER _SEMICOLON
+    ;
+data
+    : _ID
+    | _ID array_member
+    | _AROP _ID /* ONLY FOR STAR */
+    ;
+array_member
+    : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call */
+    | _LSQBRACK num_exp _RSQBRACK
     ;
 num_exp
     : exp
     | num_exp _AROP exp
+    | exp _ITER
     ;
 exp
     : literal
     | _ID
     | function_call
     | _LPAREN num_exp _RPAREN
+    | _ID array_member
+    | _AROP _ID /* ONLY FOR STAR, BAND */
+    | _AROP _ID array_member /* ONLY FOR STAR, BAND */
+    | _NULL
     ;
 literal
     : _INT_NUMBER
@@ -120,6 +149,7 @@ function_call
     ;
 argument
     : /* empty */
+    | argument _COMMA num_exp
     | num_exp
     ;
 if_statement
@@ -130,12 +160,27 @@ if_part
     : _IF _LPAREN rel_exp _RPAREN statement
     ;
 rel_exp
-    : num_exp _RELOP num_exp
+    : rel_exp _RELOP rel_exp
+    | _LPAREN rel_exp _RPAREN
+    | num_exp
     ;
 return_statement
     : _RETURN num_exp _SEMICOLON
+    | _RETURN _SEMICOLON /* FOR VOID ONLY */
     ;
-
+while_statement
+    : _WHILE _LPAREN rel_exp _RPAREN statement
+    ;
+for_statement
+    : _FOR for_cond statement
+    ;
+for_cond
+    : _LPAREN assignment_statement rel_exp _SEMICOLON change_statement _RPAREN
+    ;
+change_statement
+    : _ID _ASSIGN num_exp
+    | _ID _ITER
+    ;
 %%
 
 int yyerror(char *s){
