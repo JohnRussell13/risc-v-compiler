@@ -70,7 +70,7 @@
 
     /* NAMES AND VALUES */
 [a-zA-Z][a-zA-Z0-9_]*   { yylval.s = yytext; return _ID; }
-[+-]?[0-9]{1,10}        { yylval.s = yytext; return _INT_NUMBER; }
+[0-9]{1,10}             { yylval.s = yytext; return _INT_NUMBER; } /* CAREFULL WITH x = -5; vs 3-5; */
 [0-9]{1,10}[uU]         { yylval.s = yytext; return _UINT_NUMBER; }
 
     /* OTHER */

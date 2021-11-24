@@ -128,6 +128,7 @@ array_member
 num_exp
     : exp
     | num_exp _AROP exp
+    | _AROP exp /* ONLY FOR +- IN CASE OF -5 */
     | exp _ITER
     ;
 exp
