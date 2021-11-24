@@ -1,5 +1,5 @@
-lexer: lexer.flex
-		flex lexer.flex
+lexer: lexer.l
+		flex lexer.l
 		gcc lex.yy.c -o lexer
 
 .PHONY: clean
