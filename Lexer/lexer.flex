@@ -7,8 +7,8 @@
     } yylval ;
 
     /* TOKENS */
-    enum tokens {   _IF = 1, _ELSE, _SWITCH, _RETURN, _WHILE, _FOR,
-                    _DEF,
+    enum tokens {   _IF = 1, _ELSE, _SWITCH, _BREAK, _CONTINUE, _RETURN, _WHILE, _DO_WHILE, _FOR,
+                    _DEF, _CONST,
                     _TYPE,
                     _LPAREN, _RPAREN, _LSQBRACK, _RSQBRACK, _LBRACKET, _RBRACKET, _SEMICOLON, _COMMA, _COLON, _ASSIGN, 
                     _AROP, _RELOP, 
@@ -16,8 +16,8 @@
                     _INT_NUMBER, _UINT_NUMBER };
 
     /* TOKEN NAMES */
-    char *token_strings [] = { "NONE", "_IF", "_ELSE", "_SWITCH", "_RETURN", "_WHILE", "_FOR",
-                                "_DEF", 
+    char *token_strings [] = { "NONE", "_IF", "_ELSE", "_SWITCH", "_BREAK", "_CONTINUE", "_RETURN", "_WHILE", "_DO_WHILE", "_FOR",
+                                "_DEF", "_CONST",
                                 "_TYPE", 
                                 "_LPAREN", "_RPAREN", "_LSQBRACK", "_RSQBRACK", "_LBRACKET", "_RBRACKET", "_SEMICOLON", "_COMMA", "_COLON", "_ASSIGN", 
                                 "_AROP", "_RELOP", 
@@ -28,14 +28,14 @@
                     SL, SR, BAND, BOR, BXOR,
                     AND, OR,
                     LT, LEQ, GT, GEQ, EQ, 
-                    INT, UINT};
+                    INT, UINT, VOID};
 
     /* OPERATION NAMES */
     char *value_strings [] = { "ADD", "SUB", "STAR", "DIV", "MOD",
                                 "SL", "SR", "BAND", "BOR", "BXOR",
                                 "AND", "OR",
                                 "LT", "LEQ", "GT", "GEQ", "EQ",
-                                "INT", "UINT"};
+                                "INT", "UINT", "VOID"};
 %}
 
 %%
@@ -48,17 +48,22 @@
     /* BUILT-IN FUNCTIONS */
 "if"        { return _IF; }
 "else"      { return _ELSE; }
-"switch"      { return _SWITCH; }
-"while"     { return _WHILE; } /* MAYBE ADD DO */
+"switch"    { return _SWITCH; }
+"continue"  { return _CONTINUE; }
+"break"     { return _BREAK; }
+"while"     { return _WHILE; }
+"do while"  { return _DO_WHILE; }
 "for"       { return _FOR; }
 "return"    { return _RETURN; }
 
     /* SPECIAL KEYWORDS */
 "#define"|"#DEFINE"    { return _DEF; }
+"const"                { return _CONST;}
 
     /* DATA TYPES */
-"int"       { yylval.i = INT; return _TYPE; } /* MAYBE ADD VOID (FOR FUNCTIONS) */
+"int"       { yylval.i = INT;  return _TYPE; }
 "unsigned"  { yylval.i = UINT; return _TYPE; }
+"void"      { yylval.i = VOID; return _TYPE; }
 
     /* SPECIAL SYMBOLS */
 "("         { return _LPAREN; }
@@ -73,28 +78,28 @@
 "="         { return _ASSIGN; }
 
     /* ARITHMETIC OPERATIONS */
-"+"         { yylval.i = ADD; return _AROP; }
-"-"         { yylval.i = SUB; return _AROP; }
+"+"         { yylval.i = ADD;  return _AROP; }
+"-"         { yylval.i = SUB;  return _AROP; }
 "*"         { yylval.i = STAR; return _AROP; } /* STAR INSTEAD OF MUL SINCE IT CAN DENOTE A POINTER */
-"/"         { yylval.i = DIV; return _AROP; }
-"%"         { yylval.i = MOD; return _AROP; }
-">>"        { yylval.i = SR; return _AROP; }
-"<<"        { yylval.i = SL; return _AROP; }
+"/"         { yylval.i = DIV;  return _AROP; }
+"%"         { yylval.i = MOD;  return _AROP; }
+">>"        { yylval.i = SR;   return _AROP; }
+"<<"        { yylval.i = SL;   return _AROP; }
 "&"         { yylval.i = BAND; return _AROP; } /* CAN DENOTE ADDRES AS WELL */
-"|"         { yylval.i = BOR; return _AROP; }
+"|"         { yylval.i = BOR;  return _AROP; }
 "~"         { yylval.i = BXOR; return _AROP; }
-"&&"        { yylval.i = AND; return _AROP; }
-"||"        { yylval.i = OR; return _AROP; }
+"&&"        { yylval.i = AND;  return _AROP; }
+"||"        { yylval.i = OR;   return _AROP; }
 
     /* RELATION OPERATIONS */
-"<"         { yylval.i = LT; return _RELOP; }
+"<"         { yylval.i = LT;  return _RELOP; }
 "<="        { yylval.i = LEQ; return _RELOP; }
-">"         { yylval.i = GT; return _RELOP; }
+">"         { yylval.i = GT;  return _RELOP; }
 ">="        { yylval.i = GEQ; return _RELOP; }
-"=="        { yylval.i = EQ; return _RELOP; }
+"=="        { yylval.i = EQ;  return _RELOP; }
 
     /* NAMES AND VALUES */
-[a-zA-Z][a-zA-Z0-9_]*    { yylval.s = yytext; return _ID; }
+[a-zA-Z][a-zA-Z0-9_]*   { yylval.s = yytext; return _ID; }
 [+-]?[0-9]{1,10}        { yylval.s = yytext; return _INT_NUMBER; }
 [0-9]{1,10}[uU]         { yylval.s = yytext; return _UINT_NUMBER; }
 
