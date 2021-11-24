@@ -13,6 +13,7 @@
     char *s;
 }
 
+/* TOKENS */
 %token _IF
 %token _ELSE
 %token _SWITCH
@@ -49,6 +50,7 @@
 %token <s> _INT_NUMBER
 %token <s> _UINT_NUMBER
 
+/* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
 %nonassoc _ELSE
 
@@ -57,9 +59,9 @@
 %%
 
 program
-    : definition_list function_list
+    : define_list function_list /* NO INCLUDE */
     ;
-definition_list
+define_list
     : /* empty */
     | _DEF _ID _INT_NUMBER /* SHOULD BE EXPANDED */
     ;
@@ -68,17 +70,19 @@ function_list
     | function_list function
     ;
 function
-    : type _ID _LPAREN parameter _RPAREN body
+    : type _ID _LPAREN parameter _RPAREN body /* possible_pointer */
     ;
 type
     : _TYPE /* MAYBE EXPAND WITH CONST */
     ;
+possible_pointer
+    : _ID
+    | _AROP possible_pointer /* _AROP IS ONLT _STAR !! */
+    ;
 parameter
     : /* empty */
-    | parameter _COMMA type _ID
-    | type _ID
-    | parameter _COMMA type _AROP _ID /* _AROP IS ONLT _STAR !! */
-    | type _AROP _ID /* _AROP IS ONLT _STAR !! */
+    | parameter _COMMA type possible_pointer
+    | type possible_pointer
     ;
 body
     : _LBRACKET variable_list statement_list _RBRACKET
@@ -88,13 +92,16 @@ variable_list
     | variable_list variable
     ;
 variable
-    : type _ID _SEMICOLON
-    | type _ID array_member_definition _SEMICOLON /* EXPAND TO ACCENPT NOT JUST literal */
-    | type _AROP _ID _SEMICOLON /* ADD EVERY POSSIBILITY */ /* AROP ONLY _STAR !! */
+    : type possible_pointer _SEMICOLON
+    | type possible_pointer array_member_definition _SEMICOLON 
     ;
 array_member_definition
-    : array_member_definition _LSQBRACK literal _RSQBRACK
+    : array_member_definition _LSQBRACK array_param _RSQBRACK /* CHECK IF ITS MACRO */
     | _LSQBRACK literal _RSQBRACK
+    ;
+array_param
+    : literal
+    | _ID
     ;
 statement_list
     : /* empty */
@@ -117,9 +124,8 @@ assignment_statement
     | data _ITER _SEMICOLON
     ;
 data
-    : _ID
-    | _ID array_member
-    | _AROP _ID /* ONLY FOR STAR */
+    : possible_pointer
+    | possible_pointer array_member
     ;
 array_member
     : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call */
@@ -133,12 +139,9 @@ num_exp
     ;
 exp
     : literal
-    | _ID
+    | data
     | function_call
     | _LPAREN num_exp _RPAREN
-    | _ID array_member
-    | _AROP _ID /* ONLY FOR STAR, BAND */
-    | _AROP _ID array_member /* ONLY FOR STAR, BAND */
     | _NULL
     ;
 literal
@@ -146,7 +149,7 @@ literal
     | _UINT_NUMBER
     ;
 function_call
-    : _ID _LPAREN argument _RPAREN
+    : _ID _LPAREN argument _RPAREN /* possible_pointer */
     ;
 argument
     : /* empty */
@@ -179,8 +182,8 @@ for_cond
     : _LPAREN assignment_statement rel_exp _SEMICOLON change_statement _RPAREN
     ;
 change_statement
-    : _ID _ASSIGN num_exp
-    | _ID _ITER
+    : possible_pointer _ASSIGN num_exp
+    | possible_pointer _ITER
     ;
 %%
 
