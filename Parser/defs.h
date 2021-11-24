@@ -1,10 +1,12 @@
-//Data types
-enum types { NO_TYPE, INT, UINT };
-
-//Arithmetic operators constants
-enum arops { ADD, SUB, MUL, DIV, AROP_NUMBER };
-
-//Relational operators constants
-enum relops { LT, GT, LE, GE, EQ, NE, RELOP_NUMBER };
-
-
+#ifndef _DEFS
+#define _DEFS
+/* DATA TYPES */
+enum types { NO_TYPE, INT, UINT, VOID };
+/* ARITHMETICAL OPERATIONS */
+enum arops { ADD, SUB, STAR, DIV, MOD,
+             SL, SR, BAND, BOR, BXOR,
+             AND, OR,
+             AROP_NUMBER };
+/* RELATION OPERATORS */
+enum relops { LT, LEQ, GT, GEQ, EQ, NEQ };
+#endif
