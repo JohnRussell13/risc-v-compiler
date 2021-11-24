@@ -5,7 +5,7 @@ lexer: lexer.flex
 .PHONY: clean
 clean:
 	rm -f $(ODIR)/*.o lexer res.txt lex.yy.c
-
+	
 run:
 	echo "----- 1 -----" > res.txt
 	./lexer < ./../"Test Codes"/test1.c >> res.txt
