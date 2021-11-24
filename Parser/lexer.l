@@ -1,7 +1,7 @@
 %option noyywrap yylineno
 %{
-    #include "defs.h"
-    #include "parser.tab.c"
+    #include "parser.tab.h"
+    #include "definitions.h"
 %}
 
 %%

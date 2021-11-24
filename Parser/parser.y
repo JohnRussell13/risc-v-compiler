@@ -1,7 +1,7 @@
 %{
     #include <stdio.h>
-    #include "defs.h"
-    
+    #include "definitions.h"
+
     int yyparse(void);
     int yylex(void);
     int yyerror(char *s);
@@ -55,7 +55,11 @@
 %%
 
 program
-    : function_list
+    : definition_list function_list
+    ;
+definition_list
+    : /* empty */
+    | _DEF _ID _INT_NUMBER /* SHOULD BE EXPANDED */
     ;
 function_list
     : function
