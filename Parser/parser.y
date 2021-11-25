@@ -63,7 +63,7 @@ program
     ;
 define_list
     : /* empty */
-    | _DEF _ID _INT_NUMBER /* SHOULD BE EXPANDED */
+    | _DEF _ID macro_num_exp
     ;
 function_list
     : function
@@ -113,6 +113,7 @@ statement
     | if_statement
     | return_statement
     | while_statement
+    | do_while_statement
     | for_statement
     | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
     ;
@@ -130,6 +131,16 @@ data
 array_member
     : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call */
     | _LSQBRACK num_exp _RSQBRACK
+    ;
+macro_num_exp
+    : macro_exp
+    | macro_num_exp _AROP macro_exp
+    | _AROP macro_exp /* ONLY FOR +- IN CASE OF -5 */
+    ;
+macro_exp
+    : literal
+    | _ID
+    | _LPAREN macro_num_exp _RPAREN
     ;
 num_exp
     : exp
@@ -174,6 +185,9 @@ return_statement
     ;
 while_statement
     : _WHILE _LPAREN rel_exp _RPAREN statement
+    ;
+do_while_statement
+    : _DO _LBRACKET statement _RBRACKET _WHILE _LPAREN rel_exp _RPAREN
     ;
 for_statement
     : _FOR for_cond statement

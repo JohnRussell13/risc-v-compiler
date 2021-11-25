@@ -1,6 +1,6 @@
 //TEST ALU OPS
 
-#define y 4
+#define y (4+1)
 
 int main(){
     int x;
@@ -19,5 +19,13 @@ int main(){
     t = z0 >> 1;
     a = x & t;
     b = x * z0;
+    
+    x = 0;
+    
+    do{
+    	x += 1;
+   	y--;
+    }while(y > 0);
+    
     //return 0;
 }
