@@ -63,7 +63,7 @@ program
     ;
 define_list
     : /* empty */
-    | _DEF _ID macro_num_exp
+    | _DEF _ID num_exp /* NOT ALL num_exp */
     ;
 function_list
     : function
@@ -132,27 +132,17 @@ array_member
     : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call */
     | _LSQBRACK num_exp _RSQBRACK
     ;
-macro_num_exp
-    : macro_exp
-    | macro_num_exp _AROP macro_exp
-    | _AROP macro_exp /* ONLY FOR +- IN CASE OF -5 */
-    ;
-macro_exp
-    : literal
-    | _ID
-    | _LPAREN macro_num_exp _RPAREN
-    ;
 num_exp
     : exp
-    | num_exp _AROP exp
+    | num_exp _AROP num_exp
     | _AROP exp /* ONLY FOR +- IN CASE OF -5 */
+    | _LPAREN num_exp _RPAREN
     | exp _ITER
     ;
 exp
     : literal
     | data
     | function_call
-    | _LPAREN num_exp _RPAREN
     | _NULL
     ;
 literal
@@ -187,7 +177,7 @@ while_statement
     : _WHILE _LPAREN rel_exp _RPAREN statement
     ;
 do_while_statement
-    : _DO _LBRACKET statement _RBRACKET _WHILE _LPAREN rel_exp _RPAREN
+    : _DO statement _WHILE _LPAREN rel_exp _RPAREN _SEMICOLON
     ;
 for_statement
     : _FOR for_cond statement
