@@ -265,10 +265,7 @@ change_statement
     | possible_pointer _ITER
     ;
 /* TO BE ADDED */
-/*
-++ SWITCH
-++ BREAK
-++ CONTINUE
+/*s
 ++ a+b*c
 -- CONST
 -- pointer on a pointer
