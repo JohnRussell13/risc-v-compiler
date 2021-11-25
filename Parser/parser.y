@@ -143,6 +143,8 @@ statement
     | do_while_statement
     | for_statement
     | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
+    | _CONTINUE _SEMICOLON
+    | _BREAK _SEMICOLON
     ;
 compound_statement
     : _LBRACKET statement_list _RBRACKET
@@ -214,8 +216,6 @@ condition
     : rel_exp
     | _LPAREN condition _RPAREN log_op _LPAREN condition _RPAREN
     | rel_exp log_op rel_exp
-    | _LPAREN condition _RPAREN continue
-    | _LPAREN condition _RPAREN break
     ;
 rel_exp
     : num_exp _RELOP num_exp
@@ -239,12 +239,6 @@ for_cond
 change_statement
     : possible_pointer _ASSIGN num_exp
     | possible_pointer _ITER
-    ;
-continue
-    : _CONTINUE
-    ;
-break
-    : _BREAK
     ;
 /* TO BE ADDED */
 /*

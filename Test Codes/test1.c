@@ -26,7 +26,7 @@ int main(){
     	if(x == 2)
     		continue;
     	if(x == 4)
-    		break
+    		break;
     	x--;
     }
 
