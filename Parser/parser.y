@@ -17,6 +17,8 @@
 %token _IF
 %token _ELSE
 %token _SWITCH
+%token _CASE
+%token _DEFAULT
 %token _BREAK
 %token _CONTINUE
 %token _RETURN
@@ -145,6 +147,7 @@ statement
     | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
     | _CONTINUE _SEMICOLON
     | _BREAK _SEMICOLON
+    | switch_statement
     ;
 compound_statement
     : _LBRACKET statement_list _RBRACKET
@@ -226,6 +229,13 @@ return_statement
     ;
 while_statement
     : _WHILE _LPAREN condition _RPAREN statement
+    ;
+switch_statement
+    : _SWITCH _LPAREN condition _RPAREN _LBRACKET case_statement
+    ;
+case_statement
+    : _CASE literal _COLON statement _BREAK;
+    | _DEFAULT _COLON statement
     ;
 do_while_statement
     : _DO statement _WHILE _LPAREN condition _RPAREN _SEMICOLON

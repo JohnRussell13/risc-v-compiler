@@ -15,6 +15,8 @@
 "if"        { return _IF; }
 "else"      { return _ELSE; }
 "switch"    { return _SWITCH; }
+"case"      { return _CASE; }
+"default"   { return _DEFAULT;}
 "continue"  { return _CONTINUE; }
 "break"     { return _BREAK; }
 "while"     { return _WHILE; }
