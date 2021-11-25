@@ -1,10 +1,11 @@
 //TEST ALU OPS
 
+#define y 3
+
 int main(){
     int x;
     int z0;
     int w;
-    int y;
     int q;
     int t;
     int a;
@@ -12,7 +13,6 @@ int main(){
 
 
     x = 2;
-    y = 3;
     z0 = x + y;
     w = x - z0;
     q = x << y;

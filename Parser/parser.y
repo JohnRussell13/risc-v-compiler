@@ -76,7 +76,21 @@ program
     ;
 define_list
     : /* empty */
-    | _DEF _ID num_exp /* NOT ALL num_exp */
+    | _DEF _ID mac_num_exp /* NOT ALL num_exp */
+    ;
+mac_num_exp
+    : mac_exp
+    | mac_exp ar_op mac_exp
+    | _LPAREN mac_num_exp _RPAREN ar_op mac_exp
+    | mac_exp ar_op _LPAREN mac_num_exp _RPAREN
+    | _LPAREN mac_num_exp _RPAREN ar_op _LPAREN mac_num_exp _RPAREN
+    | _PLUS mac_exp /* ONLY FOR +- IN CASE OF -5 */
+    | _MINUS mac_exp /* ONLY FOR +- IN CASE OF -5 */
+    | mac_exp _ITER
+    ;
+mac_exp
+    : literal
+    | _ID /* SOME PREVIOUS MACRO */
     ;
 function_list
     : function
