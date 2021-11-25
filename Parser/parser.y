@@ -231,11 +231,25 @@ while_statement
     : _WHILE _LPAREN condition _RPAREN statement
     ;
 switch_statement
-    : _SWITCH _LPAREN condition _RPAREN _LBRACKET case_statement
+    : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
+    ;
+case_list
+    : case_list case_statement
+    | case_statement
     ;
 case_statement
-    : _CASE literal _COLON statement _BREAK;
-    | _DEFAULT _COLON statement
+    : _CASE num_exp _COLON case_block
+    | _DEFAULT _COLON case_block
+    ;
+case_block
+    : case_block case_state
+    | case_state
+    ;
+case_state
+    : assignment_statement
+    | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
+    | _CONTINUE _SEMICOLON
+    | _BREAK _SEMICOLON
     ;
 do_while_statement
     : _DO statement _WHILE _LPAREN condition _RPAREN _SEMICOLON
