@@ -13,13 +13,11 @@ int main () {
    ptr = var;
 
    for(i = 0; i < MAX; i++){
-      ptr++;
+      *ptr++;
    }
 
    ptr = &var[MAX - 1];
    for(i = MAX; i > 0; i--){
-      ptr--;
+      *ptr--;
    }
-   
-   ptr = NULL;
 }

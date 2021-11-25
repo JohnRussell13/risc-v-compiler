@@ -45,18 +45,19 @@
 "="         { return _ASSIGN; }
 
     /* ARITHMETIC OPERATIONS */
-"+"         { yylval.i = ADD;  return _AROP; }
-"-"         { yylval.i = SUB;  return _AROP; }
-"*"         { yylval.i = STAR; return _AROP; } /* STAR INSTEAD OF MUL SINCE IT CAN DENOTE A POINTER */
-"/"         { yylval.i = DIV;  return _AROP; }
-"%"         { yylval.i = MOD;  return _AROP; }
-">>"        { yylval.i = SR;   return _AROP; }
-"<<"        { yylval.i = SL;   return _AROP; }
-"&"         { yylval.i = BAND; return _AROP; } /* CAN DENOTE ADDRES AS WELL */
-"|"         { yylval.i = BOR;  return _AROP; }
-"~"         { yylval.i = BXOR; return _AROP; }
-"&&"        { yylval.i = AND;  return _AROP; }
-"||"        { yylval.i = OR;   return _AROP; }
+"+"         { return _PLUS; }
+"-"         { return _MINUS; }
+"/"         { return _DIV; }
+"%"         { return _MOD; }
+">>"        { return _SR; }
+"<<"        { return _SL; }
+"|"         { return _BOR; }
+"~"         { return _BXOR; }
+"&&"        { return _AND; }
+"||"        { return _OR; }
+
+"*"         { return _STAR; } /* STAR INSTEAD OF MUL SINCE IT CAN DENOTE A POINTER */
+"&"         { return _AMP; } /* CAN DENOTE ADDRES AS WELL */
 
 "++"        { yylval.i = INC;  return _ITER; }
 "--"        { yylval.i = DEC;  return _ITER; }

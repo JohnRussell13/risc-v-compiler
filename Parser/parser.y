@@ -41,7 +41,20 @@
 %token _COLON
 %token _ASSIGN
 
-%token <i> _AROP
+%token _PLUS
+%token _MINUS
+%token _DIV
+%token _MOD
+%token _SR
+%token _SL
+%token _BOR
+%token _BXOR
+%token _AND
+%token _OR
+
+%token _STAR
+%token _AMP
+
 %token <i> _ITER
 %token <i> _RELOP
 
@@ -70,14 +83,14 @@ function_list
     | function_list function
     ;
 function
-    : type _ID _LPAREN parameter _RPAREN body /* possible_pointer */
+    : type _ID _LPAREN parameter _RPAREN body
     ;
 type
     : _TYPE /* MAYBE EXPAND WITH CONST */
     ;
 possible_pointer
     : _ID
-    | _AROP possible_pointer /* _AROP IS ONLT _STAR !! */
+    | _STAR _ID
     ;
 parameter
     : /* empty */
@@ -97,7 +110,7 @@ variable
     ;
 array_member_definition
     : array_member_definition _LSQBRACK array_param _RSQBRACK /* CHECK IF ITS MACRO */
-    | _LSQBRACK literal _RSQBRACK
+    | _LSQBRACK array_param _RSQBRACK
     ;
 array_param
     : literal
@@ -122,6 +135,7 @@ compound_statement
     ;
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
+    | data _ASSIGN _AMP exp _SEMICOLON
     | data _ITER _SEMICOLON
     ;
 data
@@ -132,18 +146,36 @@ array_member
     : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call */
     | _LSQBRACK num_exp _RSQBRACK
     ;
+ar_op
+    : _PLUS
+    | _MINUS
+    | _STAR
+    | _DIV
+    | _MOD
+    | _SR
+    | _SL
+    | _AMP
+    | _BOR
+    | _BXOR
+    ;
+log_op
+    : _AND
+    | _OR
+    ;
 num_exp
     : exp
-    | num_exp _AROP num_exp
-    | _AROP exp /* ONLY FOR +- IN CASE OF -5 */
-    | _LPAREN num_exp _RPAREN
+    | exp ar_op exp
+    | _LPAREN num_exp _RPAREN ar_op exp
+    | exp ar_op _LPAREN num_exp _RPAREN
+    | _LPAREN num_exp _RPAREN ar_op _LPAREN num_exp _RPAREN
+    | _PLUS exp /* ONLY FOR +- IN CASE OF -5 */
+    | _MINUS exp /* ONLY FOR +- IN CASE OF -5 */
     | exp _ITER
     ;
 exp
     : literal
     | data
     | function_call
-    | _NULL
     ;
 literal
     : _INT_NUMBER
@@ -162,28 +194,30 @@ if_statement
     | if_part _ELSE statement
     ;
 if_part
-    : _IF _LPAREN rel_exp _RPAREN statement
+    : _IF _LPAREN condition _RPAREN statement
     ;
+condition
+    : rel_exp
+    | _LPAREN condition _RPAREN log_op _LPAREN condition _RPAREN
+    | rel_exp log_op rel_exp
 rel_exp
-    : rel_exp _RELOP rel_exp
-    | _LPAREN rel_exp _RPAREN
-    | num_exp
+    : num_exp _RELOP num_exp
     ;
 return_statement
     : _RETURN num_exp _SEMICOLON
     | _RETURN _SEMICOLON /* FOR VOID ONLY */
     ;
 while_statement
-    : _WHILE _LPAREN rel_exp _RPAREN statement
+    : _WHILE _LPAREN condition _RPAREN statement
     ;
 do_while_statement
-    : _DO statement _WHILE _LPAREN rel_exp _RPAREN _SEMICOLON
+    : _DO statement _WHILE _LPAREN condition _RPAREN _SEMICOLON
     ;
 for_statement
     : _FOR for_cond statement
     ;
 for_cond
-    : _LPAREN assignment_statement rel_exp _SEMICOLON change_statement _RPAREN
+    : _LPAREN assignment_statement condition _SEMICOLON change_statement _RPAREN
     ;
 change_statement
     : possible_pointer _ASSIGN num_exp
@@ -199,3 +233,4 @@ int yyerror(char *s){
 int main(){
     return yyparse();
 }
+    

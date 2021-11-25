@@ -21,7 +21,4 @@ int main(){
     *ptr_a = 28;
     *ptr_b = 37;
     sum_3 = *ptr_a + *ptr_b;
-    
-    ptr_a = NULL;
-    ptr_b = NULL;
 }
