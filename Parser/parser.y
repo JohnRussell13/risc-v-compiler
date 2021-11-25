@@ -143,7 +143,7 @@ data
     | possible_pointer array_member
     ;
 array_member
-    : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call */
+    : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call MUSN'T BE VOID*/
     | _LSQBRACK num_exp _RSQBRACK
     ;
 ar_op
@@ -223,6 +223,18 @@ change_statement
     : possible_pointer _ASSIGN num_exp
     | possible_pointer _ITER
     ;
+
+/* TO BE ADDED */
+/*
+++ SWITCH
+++ BREAK
+++ CONTINUE
+++ a+b*c
+-- CONST
+-- pointer on a pointer
+-- pointer on a function
+*/
+
 %%
 
 int yyerror(char *s){
