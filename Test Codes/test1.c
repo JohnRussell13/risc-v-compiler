@@ -19,6 +19,16 @@ int main(){
     t = z0 >> 1;
     a = x & t;
     b = x * z0;
-    
+
+    x = 5;
+
+    while(x>0){
+    	if(x == 2)
+    		continue;
+    	if(x == 4)
+    		break
+    	x--;
+    }
+
     //return 0;
 }
