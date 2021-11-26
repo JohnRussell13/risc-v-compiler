@@ -1,6 +1,7 @@
 %{
     #include <stdio.h>
     #include "definitions.h"
+    #include "symtab.h"
 
     int yyparse(void);
     int yylex(void);
@@ -12,6 +13,14 @@
     int i;
     char *s;
 }
+
+%{
+    int error_count = 0;
+    int warning_count = 0;
+    int var_num = 0;
+    int fun_idx = -1;
+    int fcall_idx = -1;
+%}
 
 /* TOKENS */
 %token _IF
@@ -75,6 +84,16 @@
 
 program
     : define_list function_list /* NO INCLUDE */
+      {
+		int idx = lookup_symbol("main",FUN);
+		if(idx == -1){
+			printf("Undefined reference to 'main'");
+		}else{
+			if(get_type(idx) != INT){
+				printf("Return type of 'main' is not int");
+			}
+		}
+	}
     ;
 define_list
     : /* empty */
