@@ -1,7 +1,7 @@
 parser: parser.y lexer.l
 		flex lexer.l
 		bison -d parser.y
-		gcc parser.tab.c lex.yy.c -o parser
+		gcc parser.tab.c symtab.c lex.yy.c -o parser
 
 .PHONY: clean
 clean:

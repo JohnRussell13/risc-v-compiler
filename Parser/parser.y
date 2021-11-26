@@ -20,7 +20,8 @@
     int var_num = 0;
     int fun_idx = -1;
     int fcall_idx = -1;
-    SYMBOL_ENTRY **head;
+    SYMBOL_ENTRY **head; //something still not right
+    /* GIVES SEGMENTATION FAULT (CORE DUMPED) ERROR WHEN USED */
 %}
 
 /* TOKENS */
@@ -75,6 +76,10 @@
 %token <s> _INT_NUMBER
 %token <s> _UINT_NUMBER
 
+/* VALUES */
+//%type <i> type num_exp exp literal parameter
+//%type <i> function_call argument rel_exp
+
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
 %nonassoc _ELSE
@@ -86,7 +91,7 @@
 program
     : define_list function_list /* NO INCLUDE */
     {
-        init_symtab(head);
+        //init_symtab(head);
     }
     ;
 define_list

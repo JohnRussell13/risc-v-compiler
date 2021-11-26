@@ -1,3 +1,11 @@
+#ifndef _SYMTAB_H
+#define _SYMTAB_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "definitions.h"
+
 /* STRUCTURE OF THE SYMBOL TABLE ELEMENTS */
 typedef struct sym_entry{
 	//int index; //not really needed
@@ -38,3 +46,5 @@ void print_symtab(SYMBOL_ENTRY **head);
 
 /* DELETE TABLE -- DELETES EVERYTHING BELOVE head */
 void destroy_list(SYMBOL_ENTRY **head);
+
+#endif

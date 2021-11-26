@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "symtab.h"
-#include "definitions.h"
 
 void init_symtab(SYMBOL_ENTRY **head){
 	*head = NULL;
@@ -160,7 +156,7 @@ void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
 	SYMBOL_ENTRY **temp;
 	temp = head;
 
-	for(i = 0; i < index; i++){
+	for(i = 0; i < begin_index; i++){
 		temp = &((*temp)->next);
 	}
 	
