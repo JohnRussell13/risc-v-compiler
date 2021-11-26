@@ -20,7 +20,7 @@
     int var_num = 0;
     int fun_idx = -1;
     int fcall_idx = -1;
-    SYMBOL_ENTRY **head; //something still not right
+    SYMBOL_ENTRY *head; //something still not right
     /* GIVES SEGMENTATION FAULT (CORE DUMPED) ERROR WHEN USED */
 %}
 
@@ -91,7 +91,8 @@
 program
     : define_list function_list /* NO INCLUDE */
     {
-        //init_symtab(head);
+        init_symtab(&head);
+        destroy_list(&head);
     }
     ;
 define_list
