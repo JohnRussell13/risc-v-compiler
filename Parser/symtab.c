@@ -1,66 +1,189 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "symtab.h"
 #include "definitions.h"
 
-int insert_symbol(char *name,unsigned kind, unsigned type,unsigned attr1, unsigned attr2){
-
+void init_symtab(SYMBOL_ENTRY **head){
+	*head = NULL;
 }
 
-int insert_literal(char *str, unsigned type);
+int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned attr1, unsigned attr2){
+	int i = 0;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+    SYMBOL_ENTRY *new = (SYMBOL_ENTRY *)malloc(sizeof(SYMBOL_ENTRY));
+    if (new == NULL) {
+        printf("Not enough RAM!\n");
+        exit(1);
+    }
 
-int lookup_symbol(char *name, unsigned kind){
-	//Check if symbol type exists
-	int idx;
+	strcpy(new->name, name);
+	new->kind = kind;
+	new->type = type;
+	new->attr1 = attr1;
+	new->attr2 = attr2;
+	new->next = NULL;
 
-	switch(kind){
-		case(NO_KIND):{
-			idx = get_kind(NO_KIND);
-			break;
-		}
-		case(REG):{
-			idx = get_kind(REG);
-			break;
-		}
-		case(LIT):{
-			idx = get_kind(LIT);
-			break;
-		}
-		case(FUN):{
-			idx = get_kind(FUN);
-			break;
-		}
-		case(VAR):{
-			idx = get_kind(VAR);
-			break;
-		}
-		case(PAR):{
-			idx = get_kind(PAR);
-			break;
-		}
-		default:
-			return -1;
+	while(*temp != NULL){
+		temp = &((*temp)->next);
+		i++;
 	}
-	return idx;
+	*temp = new;
+	
+	return i;
 }
 
-int lookup_literal(char *name, unsigned type);
+int lookup_symbol(SYMBOL_ENTRY **head, char *name){
+	int i = 0;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+	while(1){
+		if(*temp == NULL){
+			return -1;
+		}
+		if(strcmp((*temp)->name, name) == 0){
+			return i;
+		}
+		temp = &((*temp)->next);
+		i++;
+	}
 
-void set_name(int index, char *name);
-char* get_name(int index);
-void set_kind(int index, unsigned kind);
-unsigned get_kind(int index);
-void set_type(int index, unsigned type);
-unsigned get_type(int index);
-void set_attr1(int index, unsigned attr1);
-unsigned get_attr1(int index);
-void set_attr2(int index, unsigned attr2);
-unsigned get_attr2(int index);
+	return i;
+}
 
-void clear_symbols(unsigned begin_index);
+/* WHEN IS THIS NEEDED??? */
+void set_name(SYMBOL_ENTRY **head, int index, char *name){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
 
-void print_symtab(void);
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	(*temp)->name = name;
+}
+char* get_name(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
 
-void init_symtab(void);
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	return (*temp)->name;
+}
+void set_kind(SYMBOL_ENTRY **head, int index, unsigned kind){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
 
-void clear_symtab(void);
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	(*temp)->kind = kind;
+}
+unsigned get_kind(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	return (*temp)->kind;
+}
+void set_type(SYMBOL_ENTRY **head, int index, unsigned type){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	(*temp)->type = type;
+}
+unsigned get_type(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	return (*temp)->type;
+}
+void set_attr1(SYMBOL_ENTRY **head, int index, unsigned attr1){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	(*temp)->attr1 = attr1;
+}
+unsigned get_attr1(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	return (*temp)->attr1;
+}
+void set_attr2(SYMBOL_ENTRY **head, int index, unsigned attr2){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	(*temp)->attr2 = attr2;
+
+}
+unsigned get_attr2(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	return (*temp)->attr2;
+}
+
+void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
+	int i;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	for(i = 0; i < index; i++){
+		temp = &((*temp)->next);
+	}
+	
+	destroy_list(temp);
+}
+
+void print_symtab(SYMBOL_ENTRY **head){
+	int i = 0;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+	while(*temp != NULL){
+		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, (*temp)->name, (*temp)->kind);
+		printf("TYPE %d;\tATTR1: %d;\tATTR2: %d\n", (*temp)->type, (*temp)->attr1, (*temp)->attr2);
+
+		temp = &((*temp)->next);
+	}
+}
+
+/* DON"T KNOW REALLY HOW TO AVOID RECURSION IN THIS ONE... MAYBE TWO WAY LIST? IS IT WORTH IT? */
+void destroy_list(SYMBOL_ENTRY **head){
+    if(*head != NULL) {
+        destroy_list(&((*head)->next));
+        free(*head);
+        *head = NULL;
+    }
+}

@@ -1,11 +1,6 @@
-/* DATA TYPES */
-enum types { NO_TYPE, INT, UINT, VOID };
-/* RELATION OPERATORS */
-enum relops { LT, LEQ, GT, GEQ, EQ, NEQ };
-/* ITERATION OPERATORS */
-enum itrops { INC, DEC };
-/* SYMBOL TYPES */
-enum kinds { NO_KIND = 0x1, REG = 0x2, LIT = 0x4, FUN = 0x8, VAR =0x10, PAR = 0x20 };
+#ifndef _DEFINITIONS_H
+#define _DEFINITIONS_H
+
 /* CONSTANTS FOR SIMULATION BOOL TYPE */
 #define bool int
 #define TRUE 1
@@ -20,3 +15,15 @@ enum kinds { NO_KIND = 0x1, REG = 0x2, LIT = 0x4, FUN = 0x8, VAR =0x10, PAR = 0x
 #define FUN_REG 13
 /* BUFFER LENGTH FOR STORING ERROR MESSAGES */
 #define CHAR_BUFFER_LENGTH 129
+
+/* SYMBOLS TABLE KINDS */
+enum kinds { NO_KIND, REG, LIT, FUN, VAR, PAR };
+
+/* DATA TYPES */
+enum types { NO_TYPE, INT, UINT, VOID };
+/* RELATION OPERATORS */
+enum relops { LT, LEQ, GT, GEQ, EQ, NEQ };
+/* ITERATION OPERATORS */
+enum itrops { INC, DEC };
+
+#endif
