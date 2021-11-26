@@ -9,7 +9,7 @@
 /* STRUCTURE OF THE SYMBOL TABLE ELEMENTS */
 typedef struct sym_entry{
 	//int index; //not really needed
-	char *name; //name of symbol
+	char name[SYMBOL_TABLE_LENGTH]; //name of symbol
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
 	unsigned attr1; //additional attributes of symbol

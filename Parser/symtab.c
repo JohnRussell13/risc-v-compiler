@@ -57,7 +57,7 @@ void set_name(SYMBOL_ENTRY **head, int index, char *name){
 	for(i = 0; i < index; i++){
 		temp = &((*temp)->next);
 	}
-	(*temp)->name = name;
+	strcpy((*temp)->name, name);
 }
 char* get_name(SYMBOL_ENTRY **head, int index){
 	int i;

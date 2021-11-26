@@ -76,7 +76,10 @@
 %token <s> _INT_NUMBER
 %token <s> _UINT_NUMBER
 
-/* VALUES */
+/* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
+/* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
+/* $$ IS USED TO SET A VALUE */
+%type <i> type parameter
 //%type <i> type num_exp exp literal parameter
 //%type <i> function_call argument rel_exp
 
@@ -92,7 +95,6 @@ program
     : define_list function_list /* NO INCLUDE */
     {
         init_symtab(&head);
-        destroy_list(&head);
     }
     ;
 define_list
@@ -118,10 +120,31 @@ function_list
     | function_list function
     ;
 function
-    : type _ID _LPAREN parameter _RPAREN body
+    : type _ID 
+        {
+            fun_idx = lookup_symbol(&head, $2);
+            if(fun_idx == -1){
+                fun_idx = insert_symbol(&head, $2, FUN, $1, NO_ATR, NO_ATR);
+            }
+            else{
+                printf("ERROR: redefinition of a function '%s'", $2);
+            }
+        }
+        _LPAREN parameter _RPAREN 
+            {
+                set_attr1(&head, fun_idx, $5);
+                var_num = 0;
+            }
+        body
+            {
+                clear_symbols(&head, fun_idx+1);
+            }
     ;
 type
     : _TYPE /* MAYBE EXPAND WITH CONST */
+        {
+            $$ = $1;
+        }
     ;
 possible_pointer
     : _ID
@@ -129,8 +152,17 @@ possible_pointer
     ;
 parameter
     : /* empty */
+        {
+            $$ = 0;
+        }
     | parameter _COMMA type possible_pointer
+        {
+            $$ = 0;
+        }
     | type possible_pointer
+        {
+            $$ = 0;
+        }
     ;
 body
     : _LBRACKET variable_list statement_list _RBRACKET
