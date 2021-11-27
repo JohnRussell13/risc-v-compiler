@@ -79,7 +79,7 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type possible_pointer literal //mac_exp mac_num_exp
+%type <i> type possible_pointer literal data num_exp exp //mac_exp mac_num_exp
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -192,7 +192,7 @@ function
             if(tab_fun_ind == -1){
                 init_attr(tab_attr);
                 tab_fun_ind = insert_symbol(&head, $2, FUN, $1, 0, tab_attr);
-                printf("%d\n", tab_fun_ind);
+                //printf("%d\n", tab_fun_ind);
             }
             else{
                 printf("ERROR: redefinition of a function '%s'\n", $2);
@@ -205,11 +205,7 @@ function
         }
         body
         {
-            printf("BEF %d\n", tab_fun_ind);
-            print_symtab(&head);
             clear_symbols(&head, tab_fun_ind+1); // CLEAR PARAMS
-            printf("AFT\n");
-            print_symtab(&head);
         }
     ;
 /* VARIABLE TYPE */
@@ -284,7 +280,7 @@ variable_list
     | variable_list variable
     ;
 variable
-    : type possible_pointer _SEMICOLON
+    : type possible_pointer 
         {
             strcpy(tab_name, get_name(&head, $2));
             if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
@@ -295,7 +291,8 @@ variable
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
         }
-    | type possible_pointer array_member_definition _SEMICOLON
+        _SEMICOLON
+    | type possible_pointer
         {
             strcpy(tab_name, get_name(&head, $2));
             if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
@@ -306,6 +303,7 @@ variable
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
         }
+        array_member_definition _SEMICOLON
     ;
 array_member_definition
     : array_member_definition _LSQBRACK array_param _RSQBRACK /* CHECK IF ITS MACRO */
@@ -337,12 +335,34 @@ compound_statement
     ;
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
+        {
+            //strcpy(tab_name, get_name(&head, $1));
+            //printf("ww%s\n", tab_name);
+        }
     | data _ASSIGN _AMP exp _SEMICOLON
     | data _ITER _SEMICOLON
     ;
 data
     : possible_pointer
+        {
+            strcpy(tab_name, get_name(&head, $1));
+            if(get_total(&head) == $1 + 1){ // CHECK IF OFF BY ONE
+                printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
+            }
+            else{
+                $$ = $1;
+            }
+        }
     | possible_pointer array_member
+        {
+            strcpy(tab_name, get_name(&head, $1));
+            if(get_total(&head) == $1 + 1){ // CHECK IF OFF BY ONE
+                printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
+            }
+            else{
+                $$ = $1;
+            }
+        }
     ;
 array_member
     : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call MUSN'T BE VOID*/
@@ -366,18 +386,51 @@ log_op
     ;
 num_exp
     : exp
+        {
+            $$ = $1;
+        }
     | exp ar_op exp
+        {
+            $$ = 0;
+        }
     | _LPAREN num_exp _RPAREN ar_op exp
+        {
+            $$ = 0;
+        }
     | exp ar_op _LPAREN num_exp _RPAREN
+        {
+            $$ = 0;
+        }
     | _LPAREN num_exp _RPAREN ar_op _LPAREN num_exp _RPAREN
+        {
+            $$ = 0;
+        }
     | _PLUS exp /* ONLY FOR +- IN CASE OF -5 */
+        {
+            $$ = 0;
+        }
     | _MINUS exp /* ONLY FOR +- IN CASE OF -5 */
+        {
+            $$ = 0;
+        }
     | exp _ITER
+        {
+            $$ = 0;
+        }
     ;
 exp
     : literal
+        {
+            $$ = $1;
+        }
     | data
+        {
+            $$ = $1;
+        }
     | function_call
+        {
+            $$ = 0;
+        }
     ;
 function_call
     : _ID _LPAREN argument _RPAREN /* possible_pointer */
