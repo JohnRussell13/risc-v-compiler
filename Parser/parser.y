@@ -17,6 +17,7 @@
 %{    
     char tab_name[SYMBOL_TABLE_LENGTH];
     int tab_ind = -1;
+    int tab_fun_ind;
     int tab_val;
     int tab_attr[MAX_PARAMS];
     SYMBOL_ENTRY *head; //something still not right
@@ -97,7 +98,6 @@ program
 /* MACRO DEFINITION -- HUGE ISSUE SINCE IT NEEDS \n */
 /*define_list
     : // empty
-    | define
     | define_list define
     ;*/
 /*define
@@ -188,10 +188,11 @@ function_list
 function
     : type _ID
         {
-            tab_ind = lookup_symbol(&head, $2);
-            if(tab_ind == -1){
+            tab_fun_ind = lookup_symbol(&head, $2);
+            if(tab_fun_ind == -1){
                 init_attr(tab_attr);
-                tab_ind = insert_symbol(&head, $2, FUN, $1, 0, tab_attr);
+                tab_fun_ind = insert_symbol(&head, $2, FUN, $1, 0, tab_attr);
+                printf("%d\n", tab_fun_ind);
             }
             else{
                 printf("ERROR: redefinition of a function '%s'\n", $2);
@@ -200,11 +201,15 @@ function
         }
         _LPAREN parameter _RPAREN 
         {
-            set_attr(&head, tab_ind, tab_attr);
+            set_attr(&head, tab_fun_ind, tab_attr);
         }
         body
         {
-            clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
+            printf("BEF %d\n", tab_fun_ind);
+            print_symtab(&head);
+            clear_symbols(&head, tab_fun_ind+1); // CLEAR PARAMS
+            printf("AFT\n");
+            print_symtab(&head);
         }
     ;
 /* VARIABLE TYPE */
@@ -217,6 +222,7 @@ type
 possible_pointer
     : _ID
         {
+            printf("%s\n", $1);
             strcpy(tab_name, $1);
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
@@ -249,11 +255,10 @@ parameter
         }
     | parameter _COMMA type possible_pointer
         {
-            strcpy(tab_name, get_name(&head, $4)); // NOT THE SMARTEST SOLUTION
-            tab_ind = lookup_symbol(&head, tab_name);
+            strcpy(tab_name, get_name(&head, $4));
             if(get_total(&head) == $4 + 1){ // CHECK IF OFF BY ONE
-                set_type(&head, tab_ind, $3);
-                set_type(&head, tab_ind, PAR);
+                set_type(&head, $4, $3);
+                set_kind(&head, $4, PAR);
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -261,11 +266,10 @@ parameter
         }
     | type possible_pointer
         {
-            strcpy(tab_name, get_name(&head, $2)); // NOT THE SMARTEST SOLUTION
-            tab_ind = lookup_symbol(&head, tab_name);
+            strcpy(tab_name, get_name(&head, $2));
             if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
-                set_type(&head, tab_ind, $1);
-                set_type(&head, tab_ind, PAR);
+                set_type(&head, $2, $1);
+                set_kind(&head, $2, PAR);
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -281,7 +285,27 @@ variable_list
     ;
 variable
     : type possible_pointer _SEMICOLON
-    | type possible_pointer array_member_definition _SEMICOLON 
+        {
+            strcpy(tab_name, get_name(&head, $2));
+            if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
+                set_type(&head, $2, $1);
+                set_kind(&head, $2, VAR);
+            }
+            else{
+                printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
+        }
+    | type possible_pointer array_member_definition _SEMICOLON
+        {
+            strcpy(tab_name, get_name(&head, $2));
+            if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
+                set_type(&head, $2, $1);
+                set_kind(&head, $2, VAR);
+            }
+            else{
+                printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
+        }
     ;
 array_member_definition
     : array_member_definition _LSQBRACK array_param _RSQBRACK /* CHECK IF ITS MACRO */

@@ -37,8 +37,8 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 	}
 	*temp = new;
 
-	printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, name, kind);
-	printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", type, value, attr[0]); // SHOULD PRINT ALL ATTR
+	//printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, name, kind);
+	//printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", type, value, attr[0]); // SHOULD PRINT ALL ATTR
 	
 	return i;
 }
