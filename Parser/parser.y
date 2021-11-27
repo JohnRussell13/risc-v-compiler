@@ -12,6 +12,7 @@
 %union {
     int i;
     char *s;
+    int pp[2];
 }
 
 %{    
@@ -79,7 +80,8 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type possible_pointer literal data num_exp exp //mac_exp mac_num_exp
+%type <i> type literal data num_exp exp //mac_exp mac_num_exp
+%type <pp> possible_pointer
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -218,16 +220,18 @@ type
 possible_pointer
     : _ID
         {
-            printf("%s\n", $1);
+            //printf("%s\n", $1);
             strcpy(tab_name, $1);
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
                 init_attr(tab_attr);
                 tab_ind = insert_symbol(&head, tab_name, 0, 0, 0, tab_attr); // JUST SET THE NAME
-                $$ = tab_ind;
+                $$[0] = tab_ind;
+                $$[1] = 1;
             }
             else{
-                $$ = tab_ind;
+                $$[0] = tab_ind;
+                $$[1] = 0;
             }
         }
     | _STAR _ID
@@ -237,10 +241,12 @@ possible_pointer
             if(tab_ind == -1){
                 init_attr(tab_attr);
                 tab_ind = insert_symbol(&head, tab_name, 0, 0, 0, tab_attr);
-                $$ = tab_ind;
+                $$[0] = tab_ind;
+                $$[1] = 1;
             }
             else{
-                $$ = tab_ind;
+                $$[0] = tab_ind;
+                $$[1] = 0;
             }
         }
     ;
@@ -251,10 +257,10 @@ parameter
         }
     | parameter _COMMA type possible_pointer
         {
-            strcpy(tab_name, get_name(&head, $4));
-            if(get_total(&head) == $4 + 1){ // CHECK IF OFF BY ONE
-                set_type(&head, $4, $3);
-                set_kind(&head, $4, PAR);
+            strcpy(tab_name, get_name(&head, $4[0]));
+            if($4[1]){ // CHECK IF OFF BY ONE
+                set_type(&head, $4[0], $3);
+                set_kind(&head, $4[0], PAR);
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -262,10 +268,10 @@ parameter
         }
     | type possible_pointer
         {
-            strcpy(tab_name, get_name(&head, $2));
-            if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
-                set_type(&head, $2, $1);
-                set_kind(&head, $2, PAR);
+            strcpy(tab_name, get_name(&head, $2[0]));
+            if($2[1]){ // CHECK IF OFF BY ONE
+                set_type(&head, $2[0], $1);
+                set_kind(&head, $2[0], PAR);
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -282,10 +288,10 @@ variable_list
 variable
     : type possible_pointer 
         {
-            strcpy(tab_name, get_name(&head, $2));
-            if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
-                set_type(&head, $2, $1);
-                set_kind(&head, $2, VAR);
+            strcpy(tab_name, get_name(&head, $2[0]));
+            if($2[1]){ // CHECK IF OFF BY ONE
+                set_type(&head, $2[0], $1);
+                set_kind(&head, $2[0], VAR);
             }
             else{
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -294,10 +300,10 @@ variable
         _SEMICOLON
     | type possible_pointer
         {
-            strcpy(tab_name, get_name(&head, $2));
-            if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
-                set_type(&head, $2, $1);
-                set_kind(&head, $2, VAR);
+            strcpy(tab_name, get_name(&head, $2[0]));
+            if($2[1]){ // CHECK IF OFF BY ONE
+                set_type(&head, $2[0], $1);
+                set_kind(&head, $2[0], VAR);
             }
             else{
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -335,32 +341,28 @@ compound_statement
     ;
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
-        {
-            //strcpy(tab_name, get_name(&head, $1));
-            //printf("ww%s\n", tab_name);
-        }
     | data _ASSIGN _AMP exp _SEMICOLON
     | data _ITER _SEMICOLON
     ;
 data
     : possible_pointer
         {
-            strcpy(tab_name, get_name(&head, $1));
-            if(get_total(&head) == $1 + 1){ // CHECK IF OFF BY ONE
+            strcpy(tab_name, get_name(&head, $1[0]));
+            if($1[1]){ // CHECK IF OFF BY ONE
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
             else{
-                $$ = $1;
+                $$ = $1[0];
             }
         }
     | possible_pointer array_member
         {
-            strcpy(tab_name, get_name(&head, $1));
-            if(get_total(&head) == $1 + 1){ // CHECK IF OFF BY ONE
+            strcpy(tab_name, get_name(&head, $1[0]));
+            if($1[1]){ // CHECK IF OFF BY ONE
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
             else{
-                $$ = $1;
+                $$ = $1[0];
             }
         }
     ;
