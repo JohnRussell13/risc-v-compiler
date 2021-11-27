@@ -14,12 +14,10 @@
     char *s;
 }
 
-%{
-    int error_count = 0;
-    int warning_count = 0;
-    int var_num = 0;
-    int fun_idx = -1;
-    int fcall_idx = -1;
+%{    
+    int tab_ind = -1;
+    int tab_val;
+    int tab_attr[MAX_PARAMS];
     SYMBOL_ENTRY *head; //something still not right
     /* GIVES SEGMENTATION FAULT (CORE DUMPED) ERROR WHEN USED */
 %}
@@ -79,9 +77,7 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type parameter
-//%type <i> type num_exp exp literal parameter
-//%type <i> function_call argument rel_exp
+%type <i> type parameter possible_pointer literal //mac_exp mac_num_exp
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -92,54 +88,125 @@
 %%
 
 program
-    : define_list function_list /* NO INCLUDE */
-    {
-        init_symtab(&head);
-    }
+    : function_list //: define_list function_list /* NO INCLUDE */
+        {
+            init_symtab(&head);
+        }
     ;
-define_list
-    : /* empty */
-    | _DEF _ID mac_num_exp /* NOT ALL num_exp */
-    ;
-mac_num_exp
+/* MACRO DEFINITION -- HUGE ISSUE SINCE IT NEEDS \n */
+/*define_list
+    : // empty
+    | define
+    | define_list define
+    ;*/
+/*define
+    : _DEF _ID mac_num_exp // NOT ALL num_exp
+        {
+            tab_ind = lookup_symbol(&head, $2);
+            if(tab_ind == -1){
+                init_attr(tab_attr);
+                tab_val = $3;
+                tab_ind = insert_symbol(&head, $2, MAC, _INT_NUMBER, tab_val, tab_attr); // FIXED TYPE TO INT -- THIS SHOULD BE CHANGED
+            }
+            else{
+                printf("ERROR: redefinition of a MACRO '%s'", $2);
+            }
+
+            clear_symbols(&head, tab_ind+1);
+        }
+    ;*/
+/* EXPRESSION USED TO DEFINE A MACRO */
+/*mac_num_exp
     : mac_exp
+        {
+            $$ = $1;
+        }
     | mac_exp ar_op mac_exp
+        {
+            //arith($1, $2, $3);
+            $$ = 0;
+        }
     | _LPAREN mac_num_exp _RPAREN ar_op mac_exp
+        {
+            //arith($1, $2, $3);
+            $$ = 0;
+        }
     | mac_exp ar_op _LPAREN mac_num_exp _RPAREN
+        {
+            //arith($1, $2, $3);
+            $$ = 0;
+        }
     | _LPAREN mac_num_exp _RPAREN ar_op _LPAREN mac_num_exp _RPAREN
-    | _PLUS mac_exp /* ONLY FOR +- IN CASE OF -5 */
-    | _MINUS mac_exp /* ONLY FOR +- IN CASE OF -5 */
+        {
+            //arith($1, $2, $3);
+            $$ = 0;
+        }
+    | _PLUS mac_exp // ONLY FOR +- IN CASE OF -5 
+        {
+            $$ = $2;
+        }
+    | _MINUS mac_exp // ONLY FOR +- IN CASE OF -5 
+        {
+            $$ = $2;
+        }
     | mac_exp _ITER
-    ;
-mac_exp
+        {
+            //iteration($1, $2);
+            $$ = 0;
+        }
+    ;*/
+/* MACRO ALOOWED TYPES */
+/*mac_exp
     : literal
-    | _ID /* SOME PREVIOUS MACRO */
+        {
+            $$ = $1;
+        }
+    | _ID // SOME PREVIOUS MACRO 
+        {
+            tab_val = lookup_symbol(&head, $1);
+            $$ = tab_val;
+        }
+    ;*/
+/* NUMBER */
+literal
+    : _INT_NUMBER
+        {
+            $$ = atoi($1);
+        }
+    | _UINT_NUMBER
+        {
+            $$ = atoi($1);
+        }
     ;
+/* LIST OF FUNCTIONS -- RECURSIVE RULE */
 function_list
     : function
     | function_list function
     ;
+/* FUNCTION DEFINITION */
 function
-    : type _ID 
+    : type _ID
         {
-            fun_idx = lookup_symbol(&head, $2);
-            if(fun_idx == -1){
-                fun_idx = insert_symbol(&head, $2, FUN, $1, NO_ATR, NO_ATR);
+            tab_ind = lookup_symbol(&head, $2);
+            if(tab_ind == -1){
+                init_attr(tab_attr);
+                tab_ind = insert_symbol(&head, $2, FUN, $1, 0, tab_attr);
             }
             else{
                 printf("ERROR: redefinition of a function '%s'", $2);
             }
+
         }
         _LPAREN parameter _RPAREN 
-            {
-                set_attr1(&head, fun_idx, $5);
-                var_num = 0;
-            }
+        {
+            set_attr(&head, tab_ind, tab_attr);
+        }
         body
-            {
-                clear_symbols(&head, fun_idx+1);
-            }
+        {
+            clear_symbols(&head, tab_ind+1);
+        }
     ;
+/* VARIABLE TYPE */
 type
     : _TYPE /* MAYBE EXPAND WITH CONST */
         {
@@ -148,7 +215,15 @@ type
     ;
 possible_pointer
     : _ID
+        {
+            tab_val = lookup_symbol(&head, $1);
+            $$ = tab_val;
+        }
     | _STAR _ID
+        {
+            tab_val = lookup_symbol(&head, $2);
+            $$ = tab_val;
+        }
     ;
 parameter
     : /* empty */
@@ -246,10 +321,6 @@ exp
     : literal
     | data
     | function_call
-    ;
-literal
-    : _INT_NUMBER
-    | _UINT_NUMBER
     ;
 function_call
     : _ID _LPAREN argument _RPAREN /* possible_pointer */

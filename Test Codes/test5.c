@@ -1,6 +1,6 @@
 //SOURCE https://www.tutorialspoint.com/data_structures_algorithms/merge_sort_program_in_c.htm
 
-#define max 10
+//#define max 10
 
 void merging(int *a, int *b, int low, int mid, int high) {
    int l1;
@@ -54,6 +54,9 @@ int main() {
     int i;
     int a[11];
     int b[10];
+   int max;
+   max = 10;
+   
     for(i = 0; i < 11; i++){
         a[i] = (((i + 56789)*(i + 98765)) / 117) % 100;
     }

@@ -1,11 +1,19 @@
 #include "symtab.h"
 
+int init_attr(int *attr){
+	int i;
+	for(i = 0; i < MAX_PARAMS; i++){
+		attr[i] = 0;
+	}
+}
+
 void init_symtab(SYMBOL_ENTRY **head){
 	*head = NULL;
 }
 
-int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned attr1, unsigned attr2){
+int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned value, unsigned attr[]){
 	int i = 0;
+	int j;
 	SYMBOL_ENTRY **temp;
 	temp = head;
     SYMBOL_ENTRY *new = (SYMBOL_ENTRY *)malloc(sizeof(SYMBOL_ENTRY));
@@ -17,8 +25,10 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 	strcpy(new->name, name);
 	new->kind = kind;
 	new->type = type;
-	new->attr1 = attr1;
-	new->attr2 = attr2;
+	new->value = value;
+	for(j = 0; j < MAX_PARAMS; j++){
+		new->attr[j] = attr[j];
+	}
 	new->next = NULL;
 
 	while(*temp != NULL){
@@ -26,6 +36,9 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 		i++;
 	}
 	*temp = new;
+
+	printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, name, kind);
+	printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", type, value, attr[0]); // SHOULD PRINT ALL ATTR
 	
 	return i;
 }
@@ -109,7 +122,7 @@ unsigned get_type(SYMBOL_ENTRY **head, int index){
 	}
 	return (*temp)->type;
 }
-void set_attr1(SYMBOL_ENTRY **head, int index, unsigned attr1){
+void set_value(SYMBOL_ENTRY **head, int index, unsigned value){
 	int i;
 	SYMBOL_ENTRY **temp;
 	temp = head;
@@ -117,9 +130,9 @@ void set_attr1(SYMBOL_ENTRY **head, int index, unsigned attr1){
 	for(i = 0; i < index; i++){
 		temp = &((*temp)->next);
 	}
-	(*temp)->attr1 = attr1;
+	(*temp)->value = value;
 }
-unsigned get_attr1(SYMBOL_ENTRY **head, int index){
+unsigned get_value(SYMBOL_ENTRY **head, int index){
 	int i;
 	SYMBOL_ENTRY **temp;
 	temp = head;
@@ -127,9 +140,9 @@ unsigned get_attr1(SYMBOL_ENTRY **head, int index){
 	for(i = 0; i < index; i++){
 		temp = &((*temp)->next);
 	}
-	return (*temp)->attr1;
+	return (*temp)->value;
 }
-void set_attr2(SYMBOL_ENTRY **head, int index, unsigned attr2){
+void set_attr(SYMBOL_ENTRY **head, int index, unsigned attr[]){
 	int i;
 	SYMBOL_ENTRY **temp;
 	temp = head;
@@ -137,10 +150,12 @@ void set_attr2(SYMBOL_ENTRY **head, int index, unsigned attr2){
 	for(i = 0; i < index; i++){
 		temp = &((*temp)->next);
 	}
-	(*temp)->attr2 = attr2;
+	for(i = 0; i < MAX_PARAMS; i++){
+		(*temp)->attr[i] = attr[i];
+	}
 
 }
-unsigned get_attr2(SYMBOL_ENTRY **head, int index){
+unsigned *get_attr(SYMBOL_ENTRY **head, int index){
 	int i;
 	SYMBOL_ENTRY **temp;
 	temp = head;
@@ -148,7 +163,7 @@ unsigned get_attr2(SYMBOL_ENTRY **head, int index){
 	for(i = 0; i < index; i++){
 		temp = &((*temp)->next);
 	}
-	return (*temp)->attr2;
+	return (*temp)->attr;
 }
 
 void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
@@ -169,7 +184,7 @@ void print_symtab(SYMBOL_ENTRY **head){
 	temp = head;
 	while(*temp != NULL){
 		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, (*temp)->name, (*temp)->kind);
-		printf("TYPE %d;\tATTR1: %d;\tATTR2: %d\n", (*temp)->type, (*temp)->attr1, (*temp)->attr2);
+		printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", (*temp)->type, (*temp)->value, (*temp)->attr[0]); // SHOULD PRINT ALL ATTR
 
 		temp = &((*temp)->next);
 	}
