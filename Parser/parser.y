@@ -348,16 +348,12 @@ assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
         {
             set_value(&head, $1, $3);
-            printf("\n");
-            printf("%s = %d \n", get_name(&head, $1), $3);
-            print_symtab(&head);
+            //print_symtab(&head);
         }
     | data _ASSIGN _AMP data _SEMICOLON
         {
             set_value(&head, $1, $4);
-            printf("\n");
-            printf("%s", get_name(&head, $1));
-            print_symtab(&head);
+            //print_symtab(&head);
         }
     | data _ITER _SEMICOLON
         {
@@ -369,9 +365,7 @@ assignment_statement
                 tab_val--;
             }
             set_value(&head, $1, tab_val);
-            printf("\n");
-            printf("%s", get_name(&head, $1));
-            print_symtab(&head);
+            //print_symtab(&head);
         }
     ;
 data
@@ -721,7 +715,6 @@ exp
     | data
         {
             $$ = get_value(&head, $1);
-            printf("%d!\n", get_value(&head, $1));
         }
     | function_call
         {

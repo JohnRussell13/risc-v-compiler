@@ -45,16 +45,16 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 
 int lookup_symbol(SYMBOL_ENTRY **head, char *name){
 	int i = 0;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 	while(1){
-		if(*temp == NULL){
+		if(temp == NULL){
 			return -1;
 		}
-		if(strcmp((*temp)->name, name) == 0){
+		if(strcmp(temp->name, name) == 0){
 			return i;
 		}
-		temp = &((*temp)->next);
+		temp = temp->next;
 		i++;
 	}
 
@@ -64,63 +64,63 @@ int lookup_symbol(SYMBOL_ENTRY **head, char *name){
 /* WHEN IS THIS NEEDED??? */
 void set_name(SYMBOL_ENTRY **head, int index, char *name){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	strcpy((*temp)->name, name);
+	strcpy(temp->name, name);
 }
 char* get_name(SYMBOL_ENTRY **head, int index){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	return (*temp)->name;
+	return temp->name;
 }
 void set_kind(SYMBOL_ENTRY **head, int index, unsigned kind){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	(*temp)->kind = kind;
+	temp->kind = kind;
 }
 unsigned get_kind(SYMBOL_ENTRY **head, int index){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	return (*temp)->kind;
+	return temp->kind;
 }
 void set_type(SYMBOL_ENTRY **head, int index, unsigned type){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	(*temp)->type = type;
+	temp->type = type;
 }
 unsigned get_type(SYMBOL_ENTRY **head, int index){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	return (*temp)->type;
+	return temp->type;
 }
 void set_value(SYMBOL_ENTRY **head, int index, int value){
 	int i;
@@ -134,45 +134,45 @@ void set_value(SYMBOL_ENTRY **head, int index, int value){
 }
 unsigned get_value(SYMBOL_ENTRY **head, int index){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	return (*temp)->value;
+	return temp->value;
 }
 void set_attr(SYMBOL_ENTRY **head, int index, unsigned attr[]){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
 	for(i = 0; i < MAX_PARAMS; i++){
-		(*temp)->attr[i] = attr[i];
+		temp->attr[i] = attr[i];
 	}
 
 }
 unsigned *get_attr(SYMBOL_ENTRY **head, int index){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	return (*temp)->attr;
+	return temp->attr;
 }
 
 unsigned get_total(SYMBOL_ENTRY **head){
 	int i = 0;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
-	while(*temp != NULL){
-		temp = &((*temp)->next);
+	while(temp != NULL){
+		temp = temp->next;
 		i++;
 	}
 	return i;
@@ -192,13 +192,13 @@ void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
 
 void print_symtab(SYMBOL_ENTRY **head){
 	int i = 0;
-	SYMBOL_ENTRY **temp;
-	temp = head;
-	while(*temp != NULL){
-		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, (*temp)->name, (*temp)->kind);
-		printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", (*temp)->type, (*temp)->value, (*temp)->attr[0]); // SHOULD PRINT ALL ATTR
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+	while(temp != NULL){
+		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, temp->name, temp->kind);
+		printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", temp->type, temp->value, temp->attr[0]); // SHOULD PRINT ALL ATTR
 
-		temp = &((*temp)->next);
+		temp = temp->next;
 		i++;
 	}
 }
