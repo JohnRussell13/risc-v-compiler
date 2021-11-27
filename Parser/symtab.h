@@ -13,7 +13,7 @@ typedef struct sym_entry{
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
 	unsigned value;
-	unsigned attr[8]; //additional attributes of symbol
+	unsigned attr[MAX_PARAMS]; //additional attributes of symbol
 	struct sym_entry *next;
 } SYMBOL_ENTRY;
 
@@ -38,6 +38,9 @@ void set_value(SYMBOL_ENTRY **head, int index, unsigned value);
 unsigned get_value(SYMBOL_ENTRY **head, int index);
 void set_attr(SYMBOL_ENTRY **head, int index, unsigned attr[]);
 unsigned *get_attr(SYMBOL_ENTRY **head, int index);
+
+/* TOTAL NUMBER OF SYMBOLS */
+unsigned get_total(SYMBOL_ENTRY **head);
 
 
 /* REMOVE SUBTABLE -- DELETES EVERYTHING AFTER begin_index */

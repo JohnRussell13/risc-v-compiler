@@ -166,6 +166,18 @@ unsigned *get_attr(SYMBOL_ENTRY **head, int index){
 	return (*temp)->attr;
 }
 
+unsigned get_total(SYMBOL_ENTRY **head){
+	int i = 0;
+	SYMBOL_ENTRY **temp;
+	temp = head;
+
+	while(*temp != NULL){
+		temp = &((*temp)->next);
+		i++;
+	}
+	return i;
+}
+
 void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
 	int i;
 	SYMBOL_ENTRY **temp;

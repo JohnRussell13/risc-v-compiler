@@ -15,6 +15,7 @@
 }
 
 %{    
+    char tab_name[SYMBOL_TABLE_LENGTH];
     int tab_ind = -1;
     int tab_val;
     int tab_attr[MAX_PARAMS];
@@ -77,7 +78,7 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type parameter possible_pointer literal //mac_exp mac_num_exp
+%type <i> type possible_pointer literal //mac_exp mac_num_exp
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -109,7 +110,7 @@ program
                 tab_ind = insert_symbol(&head, $2, MAC, _INT_NUMBER, tab_val, tab_attr); // FIXED TYPE TO INT -- THIS SHOULD BE CHANGED
             }
             else{
-                printf("ERROR: redefinition of a MACRO '%s'", $2);
+                printf("ERROR: redefinition of a MACRO '%s'\n", $2);
             }
 
             clear_symbols(&head, tab_ind+1);
@@ -193,7 +194,7 @@ function
                 tab_ind = insert_symbol(&head, $2, FUN, $1, 0, tab_attr);
             }
             else{
-                printf("ERROR: redefinition of a function '%s'", $2);
+                printf("ERROR: redefinition of a function '%s'\n", $2);
             }
 
         }
@@ -203,7 +204,7 @@ function
         }
         body
         {
-            clear_symbols(&head, tab_ind+1);
+            clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
         }
     ;
 /* VARIABLE TYPE */
@@ -216,27 +217,59 @@ type
 possible_pointer
     : _ID
         {
-            tab_val = lookup_symbol(&head, $1);
-            $$ = tab_val;
+            strcpy(tab_name, $1);
+            tab_ind = lookup_symbol(&head, tab_name);
+            if(tab_ind == -1){
+                init_attr(tab_attr);
+                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0, tab_attr); // JUST SET THE NAME
+                $$ = tab_ind;
+            }
+            else{
+                $$ = tab_ind;
+            }
         }
     | _STAR _ID
         {
-            tab_val = lookup_symbol(&head, $2);
-            $$ = tab_val;
+            strcpy(tab_name, $2);
+            tab_ind = lookup_symbol(&head, tab_name);
+            if(tab_ind == -1){
+                init_attr(tab_attr);
+                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0, tab_attr);
+                $$ = tab_ind;
+            }
+            else{
+                $$ = tab_ind;
+            }
         }
     ;
 parameter
     : /* empty */
         {
-            $$ = 0;
+            /* empty */
         }
     | parameter _COMMA type possible_pointer
         {
-            $$ = 0;
+            strcpy(tab_name, get_name(&head, $4)); // NOT THE SMARTEST SOLUTION
+            tab_ind = lookup_symbol(&head, tab_name);
+            if(get_total(&head) == $4 + 1){ // CHECK IF OFF BY ONE
+                set_type(&head, tab_ind, $3);
+                set_type(&head, tab_ind, PAR);
+            }
+            else{
+                printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
         }
     | type possible_pointer
         {
-            $$ = 0;
+            strcpy(tab_name, get_name(&head, $2)); // NOT THE SMARTEST SOLUTION
+            tab_ind = lookup_symbol(&head, tab_name);
+            if(get_total(&head) == $2 + 1){ // CHECK IF OFF BY ONE
+                set_type(&head, tab_ind, $1);
+                set_type(&head, tab_ind, PAR);
+            }
+            else{
+                printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
         }
     ;
 body
@@ -397,7 +430,7 @@ change_statement
 %%
 
 int yyerror(char *s){
-    fprintf(stderr, "\nline %d: ERROR: %s", yylineno, s);
+    fprintf(stderr, "\nline %d: ERROR: %s\n", yylineno, s);
     return 0;
 }
 
