@@ -122,15 +122,15 @@ unsigned get_type(SYMBOL_ENTRY **head, int index){
 	}
 	return (*temp)->type;
 }
-void set_value(SYMBOL_ENTRY **head, int index, unsigned value){
+void set_value(SYMBOL_ENTRY **head, int index, int value){
 	int i;
-	SYMBOL_ENTRY **temp;
-	temp = head;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
 
 	for(i = 0; i < index; i++){
-		temp = &((*temp)->next);
+		temp = temp->next;
 	}
-	(*temp)->value = value;
+	temp->value = value;
 }
 unsigned get_value(SYMBOL_ENTRY **head, int index){
 	int i;
@@ -199,6 +199,7 @@ void print_symtab(SYMBOL_ENTRY **head){
 		printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", (*temp)->type, (*temp)->value, (*temp)->attr[0]); // SHOULD PRINT ALL ATTR
 
 		temp = &((*temp)->next);
+		i++;
 	}
 }
 

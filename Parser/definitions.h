@@ -21,6 +21,8 @@ enum kinds { NO_KIND, REG, LIT, FUN, VAR, PAR, MAC };
 
 /* DATA TYPES */
 enum types { NO_TYPE, INT, UINT, VOID };
+/* ARTIHMETIC AND LOGICAL OPERATORS */
+enum ops { PLUS, MINUS, STAR, DIV, MOD, SR, SL, AMP, BOR, BXOR, AND, OR };
 /* RELATION OPERATORS */
 enum relops { LT, LEQ, GT, GEQ, EQ, NEQ };
 /* ITERATION OPERATORS */

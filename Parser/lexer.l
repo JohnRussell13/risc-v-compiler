@@ -1,7 +1,7 @@
 %option noyywrap yylineno
 %{
-    #include "parser.tab.h"
     #include "definitions.h"
+    #include "parser.tab.h"
 %}
 
 %%
@@ -54,7 +54,7 @@
 ">>"        { return _SR; }
 "<<"        { return _SL; }
 "|"         { return _BOR; }
-"~"         { return _BXOR; }
+"^"         { return _BXOR; } /* NOT IS MISSING */
 "&&"        { return _AND; }
 "||"        { return _OR; }
 

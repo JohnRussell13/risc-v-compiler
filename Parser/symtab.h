@@ -12,7 +12,7 @@ typedef struct sym_entry{
 	char name[SYMBOL_TABLE_LENGTH]; //name of symbol
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
-	unsigned value;
+	int value;
 	unsigned attr[MAX_PARAMS]; //additional attributes of symbol
 	struct sym_entry *next;
 } SYMBOL_ENTRY;
@@ -34,7 +34,7 @@ void set_kind(SYMBOL_ENTRY **head, int index, unsigned kind);
 unsigned get_kind(SYMBOL_ENTRY **head, int index);
 void set_type(SYMBOL_ENTRY **head, int index, unsigned type);
 unsigned get_type(SYMBOL_ENTRY **head, int index);
-void set_value(SYMBOL_ENTRY **head, int index, unsigned value);
+void set_value(SYMBOL_ENTRY **head, int index, int value);
 unsigned get_value(SYMBOL_ENTRY **head, int index);
 void set_attr(SYMBOL_ENTRY **head, int index, unsigned attr[]);
 unsigned *get_attr(SYMBOL_ENTRY **head, int index);

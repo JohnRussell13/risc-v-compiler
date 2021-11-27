@@ -13,6 +13,7 @@
     int i;
     char *s;
     int pp[2];
+    enum ops a;
 }
 
 %{    
@@ -20,6 +21,7 @@
     int tab_ind = -1;
     int tab_fun_ind;
     int tab_val;
+    int tab_val2;
     int tab_attr[MAX_PARAMS];
     SYMBOL_ENTRY *head; //something still not right
     /* GIVES SEGMENTATION FAULT (CORE DUMPED) ERROR WHEN USED */
@@ -80,8 +82,10 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type literal data num_exp exp //mac_exp mac_num_exp
+%type <i> type literal data exp function_call //mac_exp mac_num_exp
+%type <i> num_exp // VALUE, NOT INDEX
 %type <pp> possible_pointer
+%type <a> ar_op log_op
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -207,6 +211,7 @@ function
         }
         body
         {
+            print_symtab(&head);
             clear_symbols(&head, tab_fun_ind+1); // CLEAR PARAMS
         }
     ;
@@ -341,8 +346,33 @@ compound_statement
     ;
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
-    | data _ASSIGN _AMP exp _SEMICOLON
+        {
+            set_value(&head, $1, $3);
+            printf("\n");
+            printf("%s = %d \n", get_name(&head, $1), $3);
+            print_symtab(&head);
+        }
+    | data _ASSIGN _AMP data _SEMICOLON
+        {
+            set_value(&head, $1, $4);
+            printf("\n");
+            printf("%s", get_name(&head, $1));
+            print_symtab(&head);
+        }
     | data _ITER _SEMICOLON
+        {
+            tab_val = get_value(&head, $1);
+            if($2 == INC){
+                tab_val++;
+            }
+            else{
+                tab_val--;
+            }
+            set_value(&head, $1, tab_val);
+            printf("\n");
+            printf("%s", get_name(&head, $1));
+            print_symtab(&head);
+        }
     ;
 data
     : possible_pointer
@@ -372,19 +402,55 @@ array_member
     ;
 ar_op
     : _PLUS
+        {
+            $$ = PLUS;
+        }
     | _MINUS
+        {
+            $$ = MINUS;
+        }
     | _STAR
+        {
+            $$ = STAR;
+        }
     | _DIV
+        {
+            $$ = DIV;
+        }
     | _MOD
+        {
+            $$ = MOD;
+        }
     | _SR
+        {
+            $$ = SR;
+        }
     | _SL
+        {
+            $$ = SL;
+        }
     | _AMP
+        {
+            $$ = AMP;
+        }
     | _BOR
+        {
+            $$ = BOR;
+        }
     | _BXOR
+        {
+            $$ = BXOR;
+        }
     ;
 log_op
     : _AND
+        {
+            $$ = AND;
+        }
     | _OR
+        {
+            $$ = OR;
+        }
     ;
 num_exp
     : exp
@@ -393,31 +459,258 @@ num_exp
         }
     | exp ar_op exp
         {
-            $$ = 0;
+            switch($2){
+                case PLUS:
+                    tab_val = $1 + $3;
+                    break;
+                case MINUS:
+                    tab_val = $1 - $3;
+                    break;
+                case STAR:
+                    tab_val = $1 * $3;
+                    break;
+                case DIV:
+                    if($3 == 0){
+                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    }
+                    else{
+                        tab_val = $1 / $3;
+                    }
+                    break;
+                case MOD:
+                    if($3 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    }
+                    else{
+                        tab_val = $1 % $3;
+                    }
+                    break;
+                case SR:
+                    if($3 < 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $1 >> $3;
+                    }
+                    break;
+                case SL:
+                    if(tab_val2 < 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $1 << $3;
+                    }
+                    break;
+                case AMP:
+                    tab_val = $1 & $3;
+                    break;
+                case BOR:
+                    tab_val = $1 | $3;
+                    break;
+                case BXOR:
+                    tab_val = $1 ^ $3;
+                    break;
+                default:
+                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
+                    break;
+            }
+            $$ = tab_val;
         }
     | _LPAREN num_exp _RPAREN ar_op exp
         {
-            $$ = 0;
+            switch($4){
+                case PLUS:
+                    tab_val = $2 + $5;
+                    break;
+                case MINUS:
+                    tab_val = $2 - $5;
+                    break;
+                case STAR:
+                    tab_val = $2 * $5;
+                    break;
+                case DIV:
+                    if($5 == 0){
+                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    }
+                    else{
+                        tab_val = $2 / $5;
+                    }
+                    break;
+                case MOD:
+                    if($5 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    }
+                    else{
+                        tab_val = $2 % $5;
+                    }
+                    break;
+                case SR:
+                    if($5 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $2 >> $5;
+                    }
+                    break;
+                case SL:
+                    if($5 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $2 << $5;
+                    }
+                    break;
+                case AMP:
+                    tab_val = $2 & $5;
+                    break;
+                case BOR:
+                    tab_val = $2 | $5;
+                    break;
+                case BXOR:
+                    tab_val = $2 ^ $5;
+                    break;
+                default:
+                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
+                    break;
+            }
+            $$ = tab_val;
         }
     | exp ar_op _LPAREN num_exp _RPAREN
         {
-            $$ = 0;
+            switch($2){
+                case PLUS:
+                    tab_val = $1 + $4;
+                    break;
+                case MINUS:
+                    tab_val = $1 - $4;
+                    break;
+                case STAR:
+                    tab_val = $1 * $4;
+                    break;
+                case DIV:
+                    if($4 == 0){
+                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    }
+                    else{
+                        tab_val = $1 / $4;
+                    }
+                    break;
+                case MOD:
+                    if($4 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    }
+                    else{
+                        tab_val = $1 % $4;
+                    }
+                    break;
+                case SR:
+                    if($4 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $1 >> $4;
+                    }
+                    break;
+                case SL:
+                    if($4 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $1 << $4;
+                    }
+                    break;
+                case AMP:
+                    tab_val = $1 & $4;
+                    break;
+                case BOR:
+                    tab_val = $1 | $4;
+                    break;
+                case BXOR:
+                    tab_val = $1 ^ $4;
+                    break;
+                default:
+                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
+                    break;
+            }
+            $$ = tab_val;
         }
     | _LPAREN num_exp _RPAREN ar_op _LPAREN num_exp _RPAREN
         {
-            $$ = 0;
+            switch($4){
+                case PLUS:
+                    tab_val = $2 + $6;
+                    break;
+                case MINUS:
+                    tab_val = $2 - $6;
+                    break;
+                case STAR:
+                    tab_val = $2 * $6;
+                    break;
+                case DIV:
+                    if($6 == 0){
+                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    }
+                    else{
+                        tab_val = $2 / $6;
+                    }
+                    break;
+                case MOD:
+                    if($6 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    }
+                    else{
+                        tab_val = $2 % $6;
+                    }
+                    break;
+                case SR:
+                    if($6 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $2 >> $6;
+                    }
+                    break;
+                case SL:
+                    if($6 <= 0){
+                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    }
+                    else{
+                        tab_val = $2 << $6;
+                    }
+                    break;
+                case AMP:
+                    tab_val = $2 & $6;
+                    break;
+                case BOR:
+                    tab_val = $2 | $6;
+                    break;
+                case BXOR:
+                    tab_val = $2 ^ $6;
+                    break;
+                default:
+                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
+                    break;
+            }
+            $$ = tab_val;
         }
     | _PLUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
-            $$ = 0;
+            $$ = $2;
         }
     | _MINUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
-            $$ = 0;
+            $$ = -$2;
         }
-    | exp _ITER
+    | data _ITER
         {
-            $$ = 0;
+            tab_val = get_value(&head, $1);
+            if($2 == INC){
+                set_value(&head, $2, ++tab_val);
+            }
+            else{
+                set_value(&head, $2, --tab_val);
+            }
+            $$ = tab_val;
         }
     ;
 exp
@@ -427,19 +720,32 @@ exp
         }
     | data
         {
-            $$ = $1;
+            $$ = get_value(&head, $1);
+            printf("%d!\n", get_value(&head, $1));
         }
     | function_call
         {
-            $$ = 0;
+            $$ = $1;
         }
     ;
 function_call
-    : _ID _LPAREN argument _RPAREN /* possible_pointer */
+    : _ID _LPAREN argument_list _RPAREN /* possible_pointer */
+        {
+            tab_ind = lookup_symbol(&head, $1);
+            if(tab_ind == -1){ // CHECK IF OFF BY ONE
+                printf("ERROR: FUNC CALL ISSUE: non-existing ID '%s'\n", $1);
+            }
+            else{
+                $$ = tab_ind;
+            }
+        }
+    ;
+argument_list
+    : /* empty */
+    | argument
     ;
 argument
-    : /* empty */
-    | argument _COMMA num_exp
+    : argument _COMMA num_exp
     | num_exp
     ;
 if_statement
