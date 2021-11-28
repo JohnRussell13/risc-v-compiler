@@ -52,7 +52,25 @@ int lookup_symbol(SYMBOL_ENTRY **head, char *name){
 			return -1;
 		}
 		if(strcmp(temp->name, name) == 0){
-			return i;
+			return i;			
+		}
+		temp = temp->next;
+		i++;
+	}
+
+	return i;
+}
+
+int lookup_literal(SYMBOL_ENTRY **head, char *name, unsigned type){
+	int i = 0;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+	while(1){
+		if(temp == NULL){
+			return -1;
+		}
+		if((strcmp(temp->name, name) == 0) && (temp->type == type)){
+				return i;
 		}
 		temp = temp->next;
 		i++;

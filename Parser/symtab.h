@@ -27,6 +27,9 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 /* FUNCTION FOR SEARCHING FOR SYMBOL IN SYMBOL TABLE */
 int lookup_symbol(SYMBOL_ENTRY **head, char *name);
 
+/* FUNCTION FOR SEARCHING FOR LITERAL IN SYMBOL TABLE */
+int lookup_literal(SYMBOL_ENTRY **head, char* name, unsigned type);
+
 /* METHODS FOR UPDATING ELEMENTS IN SYMBOL TABLE */
 void set_name(SYMBOL_ENTRY **head, int index, char *name);
 char* get_name(SYMBOL_ENTRY **head, int index);

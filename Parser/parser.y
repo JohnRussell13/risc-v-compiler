@@ -803,6 +803,34 @@ rel_exp
 return_statement
     : _RETURN num_exp _SEMICOLON
     | _RETURN _SEMICOLON /* FOR VOID ONLY */
+    | _RETURN _ID _SEMICOLON { /*CHECK IF VARIABLE IS DEFINED */
+            tab_fun_ind = lookup_symbol(&head, $2);
+            if(tab_fun_ind == -1){
+                printf("ERROR: variable '%s' is not defined\n", $2);
+            }
+    }
+    | _RETURN _ID _LPAREN num_exp _RPAREN _SEMICOLON { /*CHECK IF FUNCTION WHICH VALUE WILL BE RETURNED IS DEFINED */
+            tab_fun_ind = lookup_symbol(&head, $2);
+            if(tab_fun_ind == -1){
+                printf("ERROR: variable '%s' is not defined\n", $2);
+            }else if(get_kind(&head,tab_fun_ind) == FUN){
+           	if(get_type(&head,tab_fun_ind) == VOID){ /*CHECK IF RETURNED TYPE IS CORRECT */
+            		if(FUN_REG != get_value(&head,tab_fun_ind)){
+            			printf("ERROR: return type should be void\n");
+            		}
+            	}
+               if(get_type(&head,tab_fun_ind) == INT){
+            		if(FUN_REG != get_value(&head,tab_fun_ind)){
+            			printf("ERROR: return type should be int\n");
+            		}
+            	}
+            	if(get_type(&head,tab_fun_ind) == UINT){
+            		if(FUN_REG != get_value(&head,tab_fun_ind)){
+            			printf("ERROR: return type should be unsigned int\n");
+          		}
+          	}
+            }
+    }
     ;
 while_statement
     : _WHILE _LPAREN condition _RPAREN statement
