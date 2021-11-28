@@ -6,7 +6,10 @@
     int yyparse(void);
     int yylex(void);
     int yyerror(char *s);
+    void warning(char *s);
     extern int yylineno;
+    int error_count;
+    int warning_count;
 %}
 
 %union {
@@ -15,7 +18,6 @@
     int pp[2];
     enum ops a;
 }
-
 %{    
     char tab_name[SYMBOL_TABLE_LENGTH];
     int tab_ind = -1;
@@ -809,10 +811,35 @@ change_statement
 
 int yyerror(char *s){
     fprintf(stderr, "\nline %d: ERROR: %s\n", yylineno, s);
+    error_count++;
     return 0;
 }
 
+void warning(char *s){
+	fprintf(stderr,"\nline %d: WARNING: %s",yylineno,s);
+	warning_count++;
+}
 int main(){
-    return yyparse();
+    int syntax_error;
+    SYMBOL_ENTRY *head;
+    
+    init_symtab(&head);
+    
+    syntax_error = yyparse();
+    
+    print_symtab(&head);
+    
+    clear_symbols(&head,0);
+    
+    if(warning_count)
+    	printf("\n%d warning(s).\n",warning_count);
+    	
+    if(error_count)
+    	printf("\n%d error(s).\n",error_count);
+    	
+    if(syntax_error)
+    	return -1;
+    else
+    	return error_count;
 }
     
