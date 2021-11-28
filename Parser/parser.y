@@ -86,6 +86,7 @@
 /* $$ IS USED TO SET A VALUE */
 %type <i> type literal data exp function_call //mac_exp mac_num_exp
 %type <i> num_exp // VALUE, NOT INDEX
+%type <i> rel_exp
 %type <pp> possible_pointer
 %type <a> ar_op log_op
 
@@ -757,6 +758,47 @@ condition
     ;
 rel_exp
     : num_exp _RELOP num_exp
+    {
+            switch($2){
+            	case(LT): {
+            		if($1 < $3)
+            			$$ = 1;
+            		else 
+            			$$ = 0;
+            		break;
+           	}
+           	case(LEQ): {
+            		if($1 <= $3)
+            			$$ = 1;
+            		else 
+            			$$ = 0;
+            		break;
+           	}
+           	case(GT): {
+            		if($1 > $3)
+            			$$ = 1;
+            		else 
+            			$$ = 0;
+            		break;
+           	}
+           	case(GEQ): {
+            		if($1 >= $3)
+            			$$ = 1;
+            		else 
+            			$$ = 0;
+            		break;
+           	}
+           	case(EQ): {
+            		if($1 == $3)
+            			$$ = 1;
+            		else 
+            			$$ = 0;
+            		break;
+           	}
+           	printf("ERROR: REL OP ISSUE: wrong operator\n");
+                    break;
+           }
+    }
     ;
 return_statement
     : _RETURN num_exp _SEMICOLON
