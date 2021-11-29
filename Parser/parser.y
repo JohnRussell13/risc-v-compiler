@@ -107,11 +107,13 @@ program
 literal
     : _INT_NUMBER
         {
-            $$ = atoi($1);
+            tab_ind = insert_symbol(&head, $1, LIT, INT);
+            $$ = tab_ind;
         }
     | _UINT_NUMBER
         {
-            $$ = atoi($1);
+            tab_ind = insert_symbol(&head, $1, LIT, UINT);
+            $$ = tab_ind;
         }
     ;
 /* LIST OF FUNCTIONS -- RECURSIVE RULE */
@@ -425,10 +427,13 @@ num_exp
         {/*
             switch($2){
                 case PLUS:
+                    //CONSIDER:
                     //LOAD x <- $1
                     //LOAD y <- $3
                     //ADD z, x, y
                     //x, y AND z ARE REGISTERS
+                    //WE WILL USE atoi(get_name($1)) FOR literal
+
                     //tab_val = $1 + $3;
                     break;
                 case MINUS:

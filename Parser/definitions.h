@@ -15,7 +15,7 @@
 #define CHAR_BUFFER_LENGTH 129
 
 /* SYMBOLS TABLE KINDS */
-enum kinds { NO_KIND, FUN, VAR, PAR };
+enum kinds { NO_KIND, LIT, FUN, VAR, PAR };
 
 /* DATA TYPES */
 enum types { NO_TYPE, INT, UINT, VOID };
