@@ -8,10 +8,10 @@
 
 /* STRUCTURE OF THE SYMBOL TABLE ELEMENTS */
 typedef struct sym_entry{
-	//int index; //not really needed
 	char name[SYMBOL_TABLE_LENGTH]; //name of symbol
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
+	unsigned dimension[MAX_DIM];
 	struct sym_entry *next;
 } SYMBOL_ENTRY;
 
@@ -30,6 +30,8 @@ void set_kind(SYMBOL_ENTRY **head, int index, unsigned kind);
 unsigned get_kind(SYMBOL_ENTRY **head, int index);
 void set_type(SYMBOL_ENTRY **head, int index, unsigned type);
 unsigned get_type(SYMBOL_ENTRY **head, int index);
+void set_dimension(SYMBOL_ENTRY **head, int index, unsigned dimension[MAX_DIM], unsigned size);
+unsigned *get_dimension(SYMBOL_ENTRY **head, int index);
 
 /* INDEX OF THE CURRENT FUNCTION */
 unsigned get_func(SYMBOL_ENTRY **head);

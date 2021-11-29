@@ -5,7 +5,7 @@ void init_symtab(SYMBOL_ENTRY **head){
 }
 
 int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type){
-	int i = 0;
+	int i;
 	int j;
 	SYMBOL_ENTRY **temp;
 	temp = head;
@@ -19,7 +19,11 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type)
 	new->kind = kind;
 	new->type = type;
 	new->next = NULL;
+	for(i = 0; i < MAX_DIM; i++){
+		new->dimension[i] = 0;
+	}
 
+	i = 0;
 	while(*temp != NULL){
 		temp = &((*temp)->next);
 		i++;
@@ -107,6 +111,28 @@ unsigned get_type(SYMBOL_ENTRY **head, int index){
 		temp = temp->next;
 	}
 	return temp->type;
+}
+void set_dimension(SYMBOL_ENTRY **head, int index, unsigned dimension[MAX_DIM], unsigned size){
+	int i;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+
+	for(i = 0; i < index; i++){
+		temp = temp->next;
+	}
+	for(i = 0; i < MAX_DIM && i < size; i++){
+		temp->dimension[i] = dimension[i];
+	}
+}
+unsigned *get_dimension(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+
+	for(i = 0; i < index; i++){
+		temp = temp->next;
+	}
+	return temp->dimension;
 }
 
 unsigned get_func(SYMBOL_ENTRY **head){

@@ -13,9 +13,10 @@
 
     /* SYM_TAB HELPER VARIABLES */
     char tab_name[SYMBOL_TABLE_LENGTH];
-    int tab_ind = -1;
+    int tab_ind;
     int tab_type;
     int tab_kind;
+    unsigned tab_array_count;
     SYMBOL_ENTRY *head;
 %}
 
@@ -24,6 +25,7 @@
     int i;
     char *s;
     int pp[2];
+    unsigned ar[MAX_DIM];
     enum ops a;
 }
 
@@ -85,6 +87,8 @@
 %type <i> type literal data exp function_call //mac_exp mac_num_exp
 %type <pp> possible_pointer
 %type <a> ar_op log_op
+%type <ar> array_member_definition array_member
+%type <i> array_param //value
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -247,24 +251,42 @@ variable
             if($2[1]){
                 set_type(&head, $2[0], $1);
                 set_kind(&head, $2[0], VAR);
+                tab_array_count = 0; //SET COUNTER TO 0
             }
             else{
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
         }
         array_member_definition _SEMICOLON
+            {
+                set_dimension(&head, $2[0], $4, tab_array_count);
+            }
     ;
 /* ARRAY PART IN A DECLARATION */
-/* ARRAYS SHOULD BE DEALT WITH */
+/* ARRAYS SHOULD BE DEALT WITH -- LAST [] IS THE DIM = 0 */
 array_member_definition
-    : array_member_definition _LSQBRACK array_param _RSQBRACK /* CHECK IF ITS MACRO */
+    : array_member_definition _LSQBRACK array_param _RSQBRACK
+        {
+            if(tab_array_count >= MAX_DIM){
+                printf("ERROR: ARRAY SIZE ISSUE: too many dimensions");
+            }
+            $$[tab_array_count++] = $3;
+        }
     | _LSQBRACK array_param _RSQBRACK
+        {
+            if(tab_array_count >= MAX_DIM){
+                printf("ERROR: ARRAY SIZE ISSUE: too many dimensions");
+            }
+            $$[tab_array_count++] = $2;
+        }
     ;
 /* ALLOWED PARAMETERS TYPES OF AN ARRAY */
-/* ARRAYS SHOULD BE DEALT WITH */
+/* ARRAYS SHOULD BE DEALT WITH */ /* MAYBE ADD MACRO */
 array_param
     : literal
-    | _ID
+        {
+            $$ = atoi(get_name(&head, $1));
+        }
     ;
 /* LIST OF STATEMENTS */
 /* NO ACTION */
@@ -355,10 +377,14 @@ data
         }
     ;
 /* ARRAY PARAMETERS */
-/* ARRAYS SHOULD BE DEALT WITH */
+/* PRINT ASSEMBLY CODE */ /* BE CAREFULL WITH function_call MUSN'T BE VOID*/
 array_member
-    : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call MUSN'T BE VOID*/
+    : array_member _LSQBRACK num_exp _RSQBRACK
+        {
+        }
     | _LSQBRACK num_exp _RSQBRACK
+        {
+        }
     ;
 /* ARITHMETICAL OPERATIONS */
 /* RETURN WHAT OPERATION IS USED */
