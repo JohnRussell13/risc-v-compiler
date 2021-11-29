@@ -14,7 +14,6 @@
     /* SYM_TAB HELPER VARIABLES */
     char tab_name[SYMBOL_TABLE_LENGTH];
     int tab_ind = -1;
-    int tab_val;
     int tab_type;
     int tab_kind;
     SYMBOL_ENTRY *head;
@@ -87,10 +86,6 @@
 %type <pp> possible_pointer
 %type <a> ar_op log_op
 
-/* THIS IS COMPLETELY WRONG APPROACH */
-/* COMPILER SHOULDN'T DEAL WITH CALCULATIONS! */
-%type <i> num_exp rel_exp condition // VALUE, NOT INDEX
-
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
 %nonassoc _ELSE
@@ -132,7 +127,7 @@ function
         {
             tab_ind = lookup_symbol(&head, $2); //ALSO OK TO USE tab_func_ind
             if(tab_ind == -1){
-                tab_ind = insert_symbol(&head, $2, FUN, $1, 0);
+                tab_ind = insert_symbol(&head, $2, FUN, $1);
                 //printf("%d\n", tab_ind);
             }
             else{
@@ -164,7 +159,7 @@ possible_pointer
             strcpy(tab_name, $1);
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
-                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0); // JUST SET THE NAME
+                tab_ind = insert_symbol(&head, tab_name, 0, 0); // JUST SET THE NAME
                 $$[0] = tab_ind;
                 $$[1] = 1;
             }
@@ -178,7 +173,7 @@ possible_pointer
             strcpy(tab_name, $2);
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
-                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0);
+                tab_ind = insert_symbol(&head, tab_name, 0, 0);
                 $$[0] = tab_ind;
                 $$[1] = 1;
             }
@@ -296,28 +291,28 @@ compound_statement
     : _LBRACKET statement_list _RBRACKET
     ;
 /* ASSIGNMENT -- x = 5;*/
-/* SET THE VALUE */
+/* TO BE DELT WITH -- PRINT ASSEMBLY CODE */
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
         {
-            set_value(&head, $1, $3);
+            //set_value(&head, $1, $3);
             //print_symtab(&head);
         }
     | data _ASSIGN _AMP data _SEMICOLON
         {
-            set_value(&head, $1, $4);
+            //set_value(&head, $1, $4);
             //print_symtab(&head);
         }
     | data _ITER _SEMICOLON
         {
-            tab_val = get_value(&head, $1);
+            /*tab_val = get_value(&head, $1);
             if($2 == INC){
                 tab_val++;
             }
             else{
                 tab_val--;
-            }
-            set_value(&head, $1, tab_val);
+            }*/
+            //set_value(&head, $1, tab_val);
             //print_symtab(&head);
         }
     ;
@@ -420,30 +415,34 @@ log_op
         }
     ;
 /* NUMERICAL EXPRESSION -- (x+7)*sq(3) */
-/* CALCULATE AND RETURN THE VALUE */
+/* TO BE DELT WITH -- PRINT ASSEMBLY CODE BY STORING THE INTERMEDIATE RESULTS */
 num_exp
     : exp
         {
-            $$ = $1;
+            //$$ = $1;
         }
     | exp ar_op exp
-        {
+        {/*
             switch($2){
                 case PLUS:
-                    tab_val = $1 + $3;
+                    //LOAD x <- $1
+                    //LOAD y <- $3
+                    //ADD z, x, y
+                    //x, y AND z ARE REGISTERS
+                    //tab_val = $1 + $3;
                     break;
                 case MINUS:
-                    tab_val = $1 - $3;
+                    //tab_val = $1 - $3;
                     break;
                 case STAR:
-                    tab_val = $1 * $3;
+                    //tab_val = $1 * $3;
                     break;
                 case DIV:
                     if($3 == 0){
                         printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     }
                     else{
-                        tab_val = $1 / $3;
+                        //tab_val = $1 / $3;
                     }
                     break;
                 case MOD:
@@ -451,7 +450,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     }
                     else{
-                        tab_val = $1 % $3;
+                        //tab_val = $1 % $3;
                     }
                     break;
                 case SR:
@@ -459,7 +458,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $1 >> $3;
+                        //tab_val = $1 >> $3;
                     }
                     break;
                 case SL:
@@ -467,42 +466,42 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $1 << $3;
+                        //tab_val = $1 << $3;
                     }
                     break;
                 case AMP:
-                    tab_val = $1 & $3;
+                    //tab_val = $1 & $3;
                     break;
                 case BOR:
-                    tab_val = $1 | $3;
+                    //tab_val = $1 | $3;
                     break;
                 case BXOR:
-                    tab_val = $1 ^ $3;
+                    //tab_val = $1 ^ $3;
                     break;
                 default:
                     printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
                     break;
             }
-            $$ = tab_val;
+            //$$ = tab_val;*/
         }
     | _LPAREN num_exp _RPAREN ar_op exp
-        {
+        {/*
             switch($4){
                 case PLUS:
-                    tab_val = $2 + $5;
+                    //tab_val = $2 + $5;
                     break;
                 case MINUS:
-                    tab_val = $2 - $5;
+                    //tab_val = $2 - $5;
                     break;
                 case STAR:
-                    tab_val = $2 * $5;
+                    //tab_val = $2 * $5;
                     break;
                 case DIV:
                     if($5 == 0){
                         printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     }
                     else{
-                        tab_val = $2 / $5;
+                        //tab_val = $2 / $5;
                     }
                     break;
                 case MOD:
@@ -510,7 +509,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     }
                     else{
-                        tab_val = $2 % $5;
+                        //tab_val = $2 % $5;
                     }
                     break;
                 case SR:
@@ -518,7 +517,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $2 >> $5;
+                        //tab_val = $2 >> $5;
                     }
                     break;
                 case SL:
@@ -526,42 +525,42 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $2 << $5;
+                        //tab_val = $2 << $5;
                     }
                     break;
                 case AMP:
-                    tab_val = $2 & $5;
+                    //tab_val = $2 & $5;
                     break;
                 case BOR:
-                    tab_val = $2 | $5;
+                    //tab_val = $2 | $5;
                     break;
                 case BXOR:
-                    tab_val = $2 ^ $5;
+                    //tab_val = $2 ^ $5;
                     break;
                 default:
                     printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
                     break;
             }
-            $$ = tab_val;
+            //$$ = tab_val;*/
         }
     | exp ar_op _LPAREN num_exp _RPAREN
-        {
+        {/*
             switch($2){
                 case PLUS:
-                    tab_val = $1 + $4;
+                    //tab_val = $1 + $4;
                     break;
                 case MINUS:
-                    tab_val = $1 - $4;
+                    //tab_val = $1 - $4;
                     break;
                 case STAR:
-                    tab_val = $1 * $4;
+                    //tab_val = $1 * $4;
                     break;
                 case DIV:
                     if($4 == 0){
                         printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     }
                     else{
-                        tab_val = $1 / $4;
+                        //tab_val = $1 / $4;
                     }
                     break;
                 case MOD:
@@ -569,7 +568,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     }
                     else{
-                        tab_val = $1 % $4;
+                        //tab_val = $1 % $4;
                     }
                     break;
                 case SR:
@@ -577,7 +576,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $1 >> $4;
+                        //tab_val = $1 >> $4;
                     }
                     break;
                 case SL:
@@ -585,42 +584,42 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $1 << $4;
+                        //tab_val = $1 << $4;
                     }
                     break;
                 case AMP:
-                    tab_val = $1 & $4;
+                    //tab_val = $1 & $4;
                     break;
                 case BOR:
-                    tab_val = $1 | $4;
+                    //tab_val = $1 | $4;
                     break;
                 case BXOR:
-                    tab_val = $1 ^ $4;
+                    //tab_val = $1 ^ $4;
                     break;
                 default:
                     printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
                     break;
             }
-            $$ = tab_val;
+            //$$ = tab_val;*/
         }
     | _LPAREN num_exp _RPAREN ar_op _LPAREN num_exp _RPAREN
-        {
+        {/*
             switch($4){
                 case PLUS:
-                    tab_val = $2 + $6;
+                    //tab_val = $2 + $6;
                     break;
                 case MINUS:
-                    tab_val = $2 - $6;
+                    //tab_val = $2 - $6;
                     break;
                 case STAR:
-                    tab_val = $2 * $6;
+                    //tab_val = $2 * $6;
                     break;
                 case DIV:
                     if($6 == 0){
                         printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     }
                     else{
-                        tab_val = $2 / $6;
+                        //tab_val = $2 / $6;
                     }
                     break;
                 case MOD:
@@ -628,7 +627,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     }
                     else{
-                        tab_val = $2 % $6;
+                        //tab_val = $2 % $6;
                     }
                     break;
                 case SR:
@@ -636,7 +635,7 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $2 >> $6;
+                        //tab_val = $2 >> $6;
                     }
                     break;
                 case SL:
@@ -644,46 +643,46 @@ num_exp
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
-                        tab_val = $2 << $6;
+                        //tab_val = $2 << $6;
                     }
                     break;
                 case AMP:
-                    tab_val = $2 & $6;
+                    //tab_val = $2 & $6;
                     break;
                 case BOR:
-                    tab_val = $2 | $6;
+                    //tab_val = $2 | $6;
                     break;
                 case BXOR:
-                    tab_val = $2 ^ $6;
+                    //tab_val = $2 ^ $6;
                     break;
                 default:
                     printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
                     break;
             }
-            $$ = tab_val;
+            //$$ = tab_val;*/
         }
     | _PLUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
-            $$ = $2;
+            //$$ = $2;
         }
     | _MINUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
-            $$ = -$2;
+            //$$ = -$2;
         }
     | data _ITER
         {
-            tab_val = get_value(&head, $1);
+            //tab_val = get_value(&head, $1);
             if($2 == INC){
-                set_value(&head, $2, ++tab_val);
+                //set_value(&head, $2, ++tab_val);
             }
             else{
-                set_value(&head, $2, --tab_val);
+                //set_value(&head, $2, --tab_val);
             }
-            $$ = tab_val;
+            //$$ = tab_val;
         }
     ;
 /* ALLOWED PARTS OF num_exp */
-/* RETURN THE VALUE */
+/* RETURN THE INDEX */
 exp
     : literal
         {
@@ -693,7 +692,7 @@ exp
         {
             tab_kind = get_kind(&head, $1);
             if(tab_kind == VAR || tab_kind == PAR){
-                $$ = get_value(&head, $1);
+                $$ = $1;
             }
             else{
                 printf("ERROR: EXPRESSION ISSUE: no value of a non-VAR and non-PAR kind\n");
@@ -702,11 +701,11 @@ exp
     | function_call
         {
             tab_kind = get_kind(&head, $1);
-            if(tab_kind != VOID){
+            if(tab_kind == VOID){
                 printf("ERROR: FUNC CALL ISSUE: no return value of a void kind\n");
             }
             else{
-                $$ = get_value(&head, $1);
+                $$ = $1;
             }
         }
     ;
@@ -740,102 +739,103 @@ argument
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */ /* SEE HOW TO NOT MAKE THE CHANGES WHEN NOT ALLOWED */
 if_statement
     : _IF _LPAREN condition _RPAREN statement %prec ONLY_IF
-        {
+        {/*
             if($3 == 1){
                 // DO THE STATEMENT
             }
             else{
                 // DON'T DO IT
-            }
+            }*/
         }
-    | _IF _LPAREN condition _RPAREN statement _ELSE statement{
-            if($3 == 1){
-                // DO THE STATEMENT $5
-            }
-            else{
-                // DO THE STATEMENT $7
-            }
-    }
+    | _IF _LPAREN condition _RPAREN statement _ELSE statement
+        {/*
+                if($3 == 1){
+                    // DO THE STATEMENT $5
+                }
+                else{
+                    // DO THE STATEMENT $7
+                }*/
+        }
     ;
 /* CONDITION WHEN BRANCHING */
-/* RETURN 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
+/* TO BE DELT WITH -- PRINT ASSEMBLY CODE 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 condition
     : rel_exp
         {
-            $$ = $1;
+            //$$ = $1;
         }
     | _LPAREN condition _RPAREN log_op _LPAREN condition _RPAREN
         {
             switch($4){
                 case(AND):
-                    tab_val = $2 && $6;
+                    //tab_val = $2 && $6;
                     break;
                 case(OR):
-                    tab_val = $2 || $6;
+                    //tab_val = $2 || $6;
                     break;
            	    default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
-            $$ = tab_val;
+            //$$ = tab_val;
         }
     | rel_exp log_op rel_exp
         {
             switch($2){
                 case(AND):
-                    tab_val = $1 && $3;
+                    //tab_val = $1 && $3;
                     break;
                 case(OR):
-                    tab_val = $1 || $3;
+                    //tab_val = $1 || $3;
                     break;
            	    default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
-            $$ = tab_val;
+            //$$ = tab_val;
         }
     ;
 /* REALATIONAL EXPRESSION */
-/* RETURN 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
+/* TO BE DELT WITH -- PRINT ASSEMBLY CODE 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 rel_exp
     : num_exp _RELOP num_exp
-    {
+        {/*
             switch($2){
             	case(LT):
             		if($1 < $3)
-            			$$ = 1;
+            			//$$ = 1;
             		else 
-            			$$ = 0;
+            			//$$ = 0;
             		break;
            	    case(LEQ):
             		if($1 <= $3)
-            			$$ = 1;
+            			//$$ = 1;
             		else 
-            			$$ = 0;
+            			//$$ = 0;
             		break;
            	    case(GT):
             		if($1 > $3)
-            			$$ = 1;
+            			//$$ = 1;
             		else 
-            			$$ = 0;
+            			//$$ = 0;
             		break;
            	    case(GEQ):
             		if($1 >= $3)
-            			$$ = 1;
+            			//$$ = 1;
             		else 
-            			$$ = 0;
+            			//$$ = 0;
             		break;
            	    case(EQ):
             		if($1 == $3)
-            			$$ = 1;
+            			//$$ = 1;
             		else 
-            			$$ = 0;
+            			//$$ = 0;
             		break;
            	    default:
                     printf("ERROR: REL OP ISSUE: wrong operator\n");
                     break;
-           }
-    }
+           }*/
+        }
     ;
 /* RETURN STATMENT -- EITHER retur x; OR return; */
 /* CHECK IF RETURN TYPE IS CORRECT AND SET THE VALUE OF A FUNCTION */
@@ -848,7 +848,7 @@ return_statement
                 printf("ERROR: RETURN ISSUE: value in a void type\n");
             }
             else{
-                set_value(&head, tab_ind, $2);
+                //set_value(&head, tab_ind, $2);
             }
         }
     | _RETURN _SEMICOLON /* FOR VOID ONLY */

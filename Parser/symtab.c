@@ -4,7 +4,7 @@ void init_symtab(SYMBOL_ENTRY **head){
 	*head = NULL;
 }
 
-int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned value){
+int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type){
 	int i = 0;
 	int j;
 	SYMBOL_ENTRY **temp;
@@ -18,7 +18,6 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 	strcpy(new->name, name);
 	new->kind = kind;
 	new->type = type;
-	new->value = value;
 	new->next = NULL;
 
 	while(*temp != NULL){
@@ -26,9 +25,6 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 		i++;
 	}
 	*temp = new;
-
-	//printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, name, kind);
-	//printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", type, value, attr[0]); // SHOULD PRINT ALL ATTR
 	
 	return i;
 }
@@ -112,26 +108,6 @@ unsigned get_type(SYMBOL_ENTRY **head, int index){
 	}
 	return temp->type;
 }
-void set_value(SYMBOL_ENTRY **head, int index, int value){
-	int i;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-
-	for(i = 0; i < index; i++){
-		temp = temp->next;
-	}
-	temp->value = value;
-}
-unsigned get_value(SYMBOL_ENTRY **head, int index){
-	int i;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-
-	for(i = 0; i < index; i++){
-		temp = temp->next;
-	}
-	return temp->value;
-}
 
 unsigned get_func(SYMBOL_ENTRY **head){
 	int i = 0;
@@ -179,7 +155,7 @@ void print_symtab(SYMBOL_ENTRY **head){
 	temp = *head;
 	while(temp != NULL){
 		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, temp->name, temp->kind);
-		printf("TYPE %d;\tVALUE: %d\n", temp->type, temp->value);
+		printf("TYPE %d\n", temp->type);
 
 		temp = temp->next;
 		i++;

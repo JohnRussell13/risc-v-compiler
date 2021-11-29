@@ -12,14 +12,13 @@ typedef struct sym_entry{
 	char name[SYMBOL_TABLE_LENGTH]; //name of symbol
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
-	int value;
 	struct sym_entry *next;
 } SYMBOL_ENTRY;
 
 /* INT TABLE */
 void init_symtab(SYMBOL_ENTRY **head);
 /* INSERT A SYMBOL INTO THE TABLE */
-int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned value);
+int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type);
 
 /* FUNCTION FOR SEARCHING FOR SYMBOL IN SYMBOL TABLE */
 int lookup_symbol(SYMBOL_ENTRY **head, char *name);
@@ -31,8 +30,6 @@ void set_kind(SYMBOL_ENTRY **head, int index, unsigned kind);
 unsigned get_kind(SYMBOL_ENTRY **head, int index);
 void set_type(SYMBOL_ENTRY **head, int index, unsigned type);
 unsigned get_type(SYMBOL_ENTRY **head, int index);
-void set_value(SYMBOL_ENTRY **head, int index, int value);
-unsigned get_value(SYMBOL_ENTRY **head, int index);
 
 /* INDEX OF THE CURRENT FUNCTION */
 unsigned get_func(SYMBOL_ENTRY **head);
