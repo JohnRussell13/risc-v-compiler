@@ -13,22 +13,16 @@ typedef struct sym_entry{
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
 	int value;
-	unsigned attr[MAX_PARAMS]; //additional attributes of symbol
 	struct sym_entry *next;
 } SYMBOL_ENTRY;
-
-int init_attr(int *attr);
 
 /* INT TABLE */
 void init_symtab(SYMBOL_ENTRY **head);
 /* INSERT A SYMBOL INTO THE TABLE */
-int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned value, unsigned attr[]);
+int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned value);
 
 /* FUNCTION FOR SEARCHING FOR SYMBOL IN SYMBOL TABLE */
 int lookup_symbol(SYMBOL_ENTRY **head, char *name);
-
-/* FUNCTION FOR SEARCHING FOR LITERAL IN SYMBOL TABLE */
-int lookup_literal(SYMBOL_ENTRY **head, char* name, unsigned type);
 
 /* METHODS FOR UPDATING ELEMENTS IN SYMBOL TABLE */
 void set_name(SYMBOL_ENTRY **head, int index, char *name);
@@ -39,8 +33,9 @@ void set_type(SYMBOL_ENTRY **head, int index, unsigned type);
 unsigned get_type(SYMBOL_ENTRY **head, int index);
 void set_value(SYMBOL_ENTRY **head, int index, int value);
 unsigned get_value(SYMBOL_ENTRY **head, int index);
-void set_attr(SYMBOL_ENTRY **head, int index, unsigned attr[]);
-unsigned *get_attr(SYMBOL_ENTRY **head, int index);
+
+/* INDEX OF THE CURRENT FUNCTION */
+unsigned get_func(SYMBOL_ENTRY **head);
 
 /* TOTAL NUMBER OF SYMBOLS */
 unsigned get_total(SYMBOL_ENTRY **head);

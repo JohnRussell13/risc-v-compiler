@@ -10,24 +10,23 @@
     extern int yylineno;
     int error_count;
     int warning_count;
+
+    /* SYM_TAB HELPER VARIABLES */
+    char tab_name[SYMBOL_TABLE_LENGTH];
+    int tab_ind = -1;
+    int tab_val;
+    int tab_type;
+    int tab_kind;
+    SYMBOL_ENTRY *head;
 %}
 
+/* POSSIBLE TYPES */
 %union {
     int i;
     char *s;
     int pp[2];
     enum ops a;
 }
-%{    
-    char tab_name[SYMBOL_TABLE_LENGTH];
-    int tab_ind = -1;
-    int tab_fun_ind;
-    int tab_val;
-    int tab_val2;
-    int tab_attr[MAX_PARAMS];
-    SYMBOL_ENTRY *head; //something still not right
-    /* GIVES SEGMENTATION FAULT (CORE DUMPED) ERROR WHEN USED */
-%}
 
 /* TOKENS */
 %token _IF
@@ -85,10 +84,12 @@
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
 %type <i> type literal data exp function_call //mac_exp mac_num_exp
-%type <i> num_exp // VALUE, NOT INDEX
-%type <i> rel_exp
 %type <pp> possible_pointer
 %type <a> ar_op log_op
+
+/* THIS IS COMPLETELY WRONG APPROACH */
+/* COMPILER SHOULDN'T DEAL WITH CALCULATIONS! */
+%type <i> num_exp rel_exp condition // VALUE, NOT INDEX
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -98,86 +99,16 @@
 
 %%
 
+/* WHOLE PROGRAM */
+/* INIT SYM_TAB */
 program
     : function_list //: define_list function_list /* NO INCLUDE */
         {
             init_symtab(&head);
         }
     ;
-/* MACRO DEFINITION -- HUGE ISSUE SINCE IT NEEDS \n */
-/*define_list
-    : // empty
-    | define_list define
-    ;*/
-/*define
-    : _DEF _ID mac_num_exp // NOT ALL num_exp
-        {
-            tab_ind = lookup_symbol(&head, $2);
-            if(tab_ind == -1){
-                init_attr(tab_attr);
-                tab_val = $3;
-                tab_ind = insert_symbol(&head, $2, MAC, _INT_NUMBER, tab_val, tab_attr); // FIXED TYPE TO INT -- THIS SHOULD BE CHANGED
-            }
-            else{
-                printf("ERROR: redefinition of a MACRO '%s'\n", $2);
-            }
-
-            clear_symbols(&head, tab_ind+1);
-        }
-    ;*/
-/* EXPRESSION USED TO DEFINE A MACRO */
-/*mac_num_exp
-    : mac_exp
-        {
-            $$ = $1;
-        }
-    | mac_exp ar_op mac_exp
-        {
-            //arith($1, $2, $3);
-            $$ = 0;
-        }
-    | _LPAREN mac_num_exp _RPAREN ar_op mac_exp
-        {
-            //arith($1, $2, $3);
-            $$ = 0;
-        }
-    | mac_exp ar_op _LPAREN mac_num_exp _RPAREN
-        {
-            //arith($1, $2, $3);
-            $$ = 0;
-        }
-    | _LPAREN mac_num_exp _RPAREN ar_op _LPAREN mac_num_exp _RPAREN
-        {
-            //arith($1, $2, $3);
-            $$ = 0;
-        }
-    | _PLUS mac_exp // ONLY FOR +- IN CASE OF -5 
-        {
-            $$ = $2;
-        }
-    | _MINUS mac_exp // ONLY FOR +- IN CASE OF -5 
-        {
-            $$ = $2;
-        }
-    | mac_exp _ITER
-        {
-            //iteration($1, $2);
-            $$ = 0;
-        }
-    ;*/
-/* MACRO ALOOWED TYPES */
-/*mac_exp
-    : literal
-        {
-            $$ = $1;
-        }
-    | _ID // SOME PREVIOUS MACRO 
-        {
-            tab_val = lookup_symbol(&head, $1);
-            $$ = tab_val;
-        }
-    ;*/
 /* NUMBER */
+/* RETURN THE VALUE OF A GIVEN NUMBER */
 literal
     : _INT_NUMBER
         {
@@ -189,42 +120,43 @@ literal
         }
     ;
 /* LIST OF FUNCTIONS -- RECURSIVE RULE */
+/* NO ACTION */
 function_list
     : function
     | function_list function
     ;
 /* FUNCTION DEFINITION */
+/* CHECK IF THE NAME IS FREE AND ADD IT TO THE SYM_TAB; CHECK  */
 function
     : type _ID
         {
-            tab_fun_ind = lookup_symbol(&head, $2);
-            if(tab_fun_ind == -1){
-                init_attr(tab_attr);
-                tab_fun_ind = insert_symbol(&head, $2, FUN, $1, 0, tab_attr);
-                //printf("%d\n", tab_fun_ind);
+            tab_ind = lookup_symbol(&head, $2); //ALSO OK TO USE tab_func_ind
+            if(tab_ind == -1){
+                tab_ind = insert_symbol(&head, $2, FUN, $1, 0);
+                //printf("%d\n", tab_ind);
             }
             else{
                 printf("ERROR: redefinition of a function '%s'\n", $2);
             }
 
         }
-        _LPAREN parameter _RPAREN 
+        _LPAREN parameter_list _RPAREN body
         {
-            set_attr(&head, tab_fun_ind, tab_attr);
-        }
-        body
-        {
+            tab_ind = lookup_symbol(&head, $2);
             print_symtab(&head);
-            clear_symbols(&head, tab_fun_ind+1); // CLEAR PARAMS
+            clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
         }
     ;
-/* VARIABLE TYPE */
+/* TYPE */
+/* RETURN TYPE */
 type
     : _TYPE /* MAYBE EXPAND WITH CONST */
         {
             $$ = $1;
         }
     ;
+/* ID OF SOME PAR OR VAR */
+/* RETURN INDEX AND IS IT NEW */
 possible_pointer
     : _ID
         {
@@ -232,8 +164,7 @@ possible_pointer
             strcpy(tab_name, $1);
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
-                init_attr(tab_attr);
-                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0, tab_attr); // JUST SET THE NAME
+                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0); // JUST SET THE NAME
                 $$[0] = tab_ind;
                 $$[1] = 1;
             }
@@ -247,8 +178,7 @@ possible_pointer
             strcpy(tab_name, $2);
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
-                init_attr(tab_attr);
-                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0, tab_attr);
+                tab_ind = insert_symbol(&head, tab_name, 0, 0, 0);
                 $$[0] = tab_ind;
                 $$[1] = 1;
             }
@@ -258,15 +188,18 @@ possible_pointer
             }
         }
     ;
-parameter
+/* NO PARAMETERS OR LIST OF FUNCTIONS PARAMETERS */
+/* NO ACTION */
+parameter_list
     : /* empty */
-        {
-            /* empty */
-        }
-    | parameter _COMMA type possible_pointer
+    | parameter
+/* LIST OF FUNCTIONS PARAMETERS */
+/* CHEK IF THE NAME IS FREE AND MAKE A NEW SYM_TAB ENTRY */
+parameter
+    : parameter _COMMA type possible_pointer
         {
             strcpy(tab_name, get_name(&head, $4[0]));
-            if($4[1]){ // CHECK IF OFF BY ONE
+            if($4[1]){
                 set_type(&head, $4[0], $3);
                 set_kind(&head, $4[0], PAR);
             }
@@ -277,7 +210,7 @@ parameter
     | type possible_pointer
         {
             strcpy(tab_name, get_name(&head, $2[0]));
-            if($2[1]){ // CHECK IF OFF BY ONE
+            if($2[1]){
                 set_type(&head, $2[0], $1);
                 set_kind(&head, $2[0], PAR);
             }
@@ -286,18 +219,24 @@ parameter
             }
         }
     ;
+/* BODY OF A FUNCTION */
+/* NO ACTION */
 body
     : _LBRACKET variable_list statement_list _RBRACKET
     ;
+/* LIST OF VARIABLE DECLARATIONS */
+/* NO ACTION */
 variable_list
     : /* empty */
     | variable_list variable
     ;
+/* VARIABLE DECLARATION */ /* MAYBE ADD DEFINTIONS AS WELL -- int x = 5; */
+/* CHEK IF THE NAME IS FREE AND MAKE A NEW SYM_TAB ENTRY */
 variable
-    : type possible_pointer 
+    : type possible_pointer _SEMICOLON
         {
             strcpy(tab_name, get_name(&head, $2[0]));
-            if($2[1]){ // CHECK IF OFF BY ONE
+            if($2[1]){
                 set_type(&head, $2[0], $1);
                 set_kind(&head, $2[0], VAR);
             }
@@ -305,11 +244,10 @@ variable
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
         }
-        _SEMICOLON
     | type possible_pointer
         {
             strcpy(tab_name, get_name(&head, $2[0]));
-            if($2[1]){ // CHECK IF OFF BY ONE
+            if($2[1]){
                 set_type(&head, $2[0], $1);
                 set_kind(&head, $2[0], VAR);
             }
@@ -319,18 +257,26 @@ variable
         }
         array_member_definition _SEMICOLON
     ;
+/* ARRAY PART IN A DECLARATION */
+/* ARRAYS SHOULD BE DEALT WITH */
 array_member_definition
     : array_member_definition _LSQBRACK array_param _RSQBRACK /* CHECK IF ITS MACRO */
     | _LSQBRACK array_param _RSQBRACK
     ;
+/* ALLOWED PARAMETERS TYPES OF AN ARRAY */
+/* ARRAYS SHOULD BE DEALT WITH */
 array_param
     : literal
     | _ID
     ;
+/* LIST OF STATEMENTS */
+/* NO ACTION */
 statement_list
     : /* empty */
     | statement_list statement
     ;
+/* POSSIBLE STATEMENTS -- NO RETURN VALUE */
+/* NO ACTION */
 statement
     : compound_statement
     | assignment_statement
@@ -344,9 +290,13 @@ statement
     | _BREAK _SEMICOLON
     | switch_statement
     ;
+/* COMPOUND STATMENT -- {} BLOCK */
+/* NO ACTION */
 compound_statement
     : _LBRACKET statement_list _RBRACKET
     ;
+/* ASSIGNMENT -- x = 5;*/
+/* SET THE VALUE */
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
         {
@@ -371,32 +321,50 @@ assignment_statement
             //print_symtab(&head);
         }
     ;
+/* possible_pointer OR array of possible_pointer */
+/* CHECK IF IT EXISTS AND RETURN ITS INDEX */
 data
     : possible_pointer
         {
             strcpy(tab_name, get_name(&head, $1[0]));
-            if($1[1]){ // CHECK IF OFF BY ONE
+            tab_kind = get_kind(&head, $1[0]);
+            if($1[1]){
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
             else{
-                $$ = $1[0];
+                if(tab_kind != VAR && tab_kind != PAR){
+                    printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind'%s'\n", tab_name);
+                }
+                else{
+                    $$ = $1[0];
+                }
             }
         }
     | possible_pointer array_member
         {
             strcpy(tab_name, get_name(&head, $1[0]));
-            if($1[1]){ // CHECK IF OFF BY ONE
+            tab_kind = get_kind(&head, $1[0]);
+            if($1[1]){
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
             else{
-                $$ = $1[0];
+                if(tab_kind != VAR && tab_kind != PAR){
+                    printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind'%s'\n", tab_name);
+                }
+                else{
+                    $$ = $1[0];
+                }
             }
         }
     ;
+/* ARRAY PARAMETERS */
+/* ARRAYS SHOULD BE DEALT WITH */
 array_member
     : array_member _LSQBRACK num_exp _RSQBRACK /* BE CAREFULL WITH function_call MUSN'T BE VOID*/
     | _LSQBRACK num_exp _RSQBRACK
     ;
+/* ARITHMETICAL OPERATIONS */
+/* RETURN WHAT OPERATION IS USED */
 ar_op
     : _PLUS
         {
@@ -439,6 +407,8 @@ ar_op
             $$ = BXOR;
         }
     ;
+/* LOGIAL OPERATION */
+/* RETURN WHAT OPERATION IS USED */
 log_op
     : _AND
         {
@@ -449,6 +419,8 @@ log_op
             $$ = OR;
         }
     ;
+/* NUMERICAL EXPRESSION -- (x+7)*sq(3) */
+/* CALCULATE AND RETURN THE VALUE */
 num_exp
     : exp
         {
@@ -491,7 +463,7 @@ num_exp
                     }
                     break;
                 case SL:
-                    if(tab_val2 < 0){
+                    if($3 < 0){
                         printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     }
                     else{
@@ -710,6 +682,8 @@ num_exp
             $$ = tab_val;
         }
     ;
+/* ALLOWED PARTS OF num_exp */
+/* RETURN THE VALUE */
 exp
     : literal
         {
@@ -717,13 +691,27 @@ exp
         }
     | data
         {
-            $$ = get_value(&head, $1);
+            tab_kind = get_kind(&head, $1);
+            if(tab_kind == VAR || tab_kind == PAR){
+                $$ = get_value(&head, $1);
+            }
+            else{
+                printf("ERROR: EXPRESSION ISSUE: no value of a non-VAR and non-PAR kind\n");
+            }
         }
     | function_call
         {
-            $$ = $1;
+            tab_kind = get_kind(&head, $1);
+            if(tab_kind != VOID){
+                printf("ERROR: FUNC CALL ISSUE: no return value of a void kind\n");
+            }
+            else{
+                $$ = get_value(&head, $1);
+            }
         }
     ;
+/* FUNCTION CALL (THAT RETURNS A VALUE -- INSIDE A num_exp) */
+/* CHECK IF EXISTING FUNC IS CALLED AND RETURN ITS INDEX */
 function_call
     : _ID _LPAREN argument_list _RPAREN /* possible_pointer */
         {
@@ -736,135 +724,195 @@ function_call
             }
         }
     ;
+/* ARGUMENTS OF A FUNCTION CALL */
+/* NO ACTION */
 argument_list
     : /* empty */
     | argument
     ;
+/* ARGUMENTS OF A FUNCTION CALL */
+/* TO BE DELT WITH */
 argument
     : argument _COMMA num_exp
     | num_exp
     ;
+/* IF STATEMENT */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */ /* SEE HOW TO NOT MAKE THE CHANGES WHEN NOT ALLOWED */
 if_statement
-    : if_part %prec ONLY_IF
-    | if_part _ELSE statement
+    : _IF _LPAREN condition _RPAREN statement %prec ONLY_IF
+        {
+            if($3 == 1){
+                // DO THE STATEMENT
+            }
+            else{
+                // DON'T DO IT
+            }
+        }
+    | _IF _LPAREN condition _RPAREN statement _ELSE statement{
+            if($3 == 1){
+                // DO THE STATEMENT $5
+            }
+            else{
+                // DO THE STATEMENT $7
+            }
+    }
     ;
-if_part
-    : _IF _LPAREN condition _RPAREN statement
-    ;
+/* CONDITION WHEN BRANCHING */
+/* RETURN 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 condition
     : rel_exp
+        {
+            $$ = $1;
+        }
     | _LPAREN condition _RPAREN log_op _LPAREN condition _RPAREN
+        {
+            switch($4){
+                case(AND):
+                    tab_val = $2 && $6;
+                    break;
+                case(OR):
+                    tab_val = $2 || $6;
+                    break;
+           	    default:
+                    printf("ERROR: COND ISSUE: wrong logical operator\n");
+                    break;
+            }
+            $$ = tab_val;
+        }
     | rel_exp log_op rel_exp
+        {
+            switch($2){
+                case(AND):
+                    tab_val = $1 && $3;
+                    break;
+                case(OR):
+                    tab_val = $1 || $3;
+                    break;
+           	    default:
+                    printf("ERROR: COND ISSUE: wrong logical operator\n");
+                    break;
+            }
+            $$ = tab_val;
+        }
     ;
+/* REALATIONAL EXPRESSION */
+/* RETURN 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 rel_exp
     : num_exp _RELOP num_exp
     {
             switch($2){
-            	case(LT): {
+            	case(LT):
             		if($1 < $3)
             			$$ = 1;
             		else 
             			$$ = 0;
             		break;
-           	}
-           	case(LEQ): {
+           	    case(LEQ):
             		if($1 <= $3)
             			$$ = 1;
             		else 
             			$$ = 0;
             		break;
-           	}
-           	case(GT): {
+           	    case(GT):
             		if($1 > $3)
             			$$ = 1;
             		else 
             			$$ = 0;
             		break;
-           	}
-           	case(GEQ): {
+           	    case(GEQ):
             		if($1 >= $3)
             			$$ = 1;
             		else 
             			$$ = 0;
             		break;
-           	}
-           	case(EQ): {
+           	    case(EQ):
             		if($1 == $3)
             			$$ = 1;
             		else 
             			$$ = 0;
             		break;
-           	}
-           	printf("ERROR: REL OP ISSUE: wrong operator\n");
+           	    default:
+                    printf("ERROR: REL OP ISSUE: wrong operator\n");
                     break;
            }
     }
     ;
+/* RETURN STATMENT -- EITHER retur x; OR return; */
+/* CHECK IF RETURN TYPE IS CORRECT AND SET THE VALUE OF A FUNCTION */
 return_statement
     : _RETURN num_exp _SEMICOLON
+        {
+            tab_ind = get_func(&head);
+            tab_type = get_type(&head, tab_ind);
+            if(tab_type == VOID){
+                printf("ERROR: RETURN ISSUE: value in a void type\n");
+            }
+            else{
+                set_value(&head, tab_ind, $2);
+            }
+        }
     | _RETURN _SEMICOLON /* FOR VOID ONLY */
-    | _RETURN _ID _SEMICOLON { /*CHECK IF VARIABLE IS DEFINED */
-            tab_fun_ind = lookup_symbol(&head, $2);
-            if(tab_fun_ind == -1){
-                printf("ERROR: variable '%s' is not defined\n", $2);
+        {
+            tab_ind = get_func(&head);
+            tab_type = get_type(&head, tab_ind);
+            if(tab_type != VOID){
+                printf("ERROR: RETURN ISSUE: missing value in non-void type\n");
             }
-    }
-    | _RETURN _ID _LPAREN num_exp _RPAREN _SEMICOLON { /*CHECK IF FUNCTION WHICH VALUE WILL BE RETURNED IS DEFINED */
-            tab_fun_ind = lookup_symbol(&head, $2);
-            if(tab_fun_ind == -1){
-                printf("ERROR: variable '%s' is not defined\n", $2);
-            }else if(get_kind(&head,tab_fun_ind) == FUN){
-           	if(get_type(&head,tab_fun_ind) == VOID){ /*CHECK IF RETURNED TYPE IS CORRECT */
-            		if(FUN_REG != get_value(&head,tab_fun_ind)){
-            			printf("ERROR: return type should be void\n");
-            		}
-            	}
-               if(get_type(&head,tab_fun_ind) == INT){
-            		if(FUN_REG != get_value(&head,tab_fun_ind)){
-            			printf("ERROR: return type should be int\n");
-            		}
-            	}
-            	if(get_type(&head,tab_fun_ind) == UINT){
-            		if(FUN_REG != get_value(&head,tab_fun_ind)){
-            			printf("ERROR: return type should be unsigned int\n");
-          		}
-          	}
-            }
-    }
+        }
     ;
+/* WHILE STATEMENT */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 while_statement
     : _WHILE _LPAREN condition _RPAREN statement
     ;
+/* SWITCH STATEMENT */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 switch_statement
     : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
     ;
+/* LIST OF CASES */
+/* TO BE DELT WITH */
 case_list
     : case_list case_statement
     | case_statement
     ;
+/* CASE STATEMENT */
+/* TO BE DELT WITH */ /* ALLOW ONLY ONE default */
 case_statement
     : _CASE num_exp _COLON case_block
     | _DEFAULT _COLON case_block
     ;
+/* LIST OF ALLOWED STATEMENTS INSIDE A CASE BLOCK */
+/* TO BE DELT WITH */
 case_block
     : case_block case_state
     | case_state
     ;
+/* ALLOWED STATEMENTS INSIDE A CASE BLOCK */
+/* TO BE DELT WITH */
 case_state
     : assignment_statement
     | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
     | _CONTINUE _SEMICOLON
     | _BREAK _SEMICOLON
     ;
+/* DO WHILE STATEMENT */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 do_while_statement
     : _DO statement _WHILE _LPAREN condition _RPAREN _SEMICOLON
     ;
+/* FOR STATEMENT */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 for_statement
-    : _FOR for_cond statement
+    : _FOR for_args statement
     ;
-for_cond
+/* ARGUMENTS OF FOR */
+/* TO BE DELT WITH */
+for_args
     : _LPAREN assignment_statement condition _SEMICOLON change_statement _RPAREN
     ;
+/* SIMPLE ASSIGN STATEMENTS */
+/* TO BE DELT WITH */
 change_statement
     : possible_pointer _ASSIGN num_exp
     | possible_pointer _ITER
@@ -872,6 +920,7 @@ change_statement
 /* TO BE ADDED */
 /*
 ++ a+b*c
+++ += -= *= ...
 -- CONST
 -- pointer on a pointer
 -- pointer on a function

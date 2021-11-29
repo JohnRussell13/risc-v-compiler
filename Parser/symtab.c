@@ -1,17 +1,10 @@
 #include "symtab.h"
 
-int init_attr(int *attr){
-	int i;
-	for(i = 0; i < MAX_PARAMS; i++){
-		attr[i] = 0;
-	}
-}
-
 void init_symtab(SYMBOL_ENTRY **head){
 	*head = NULL;
 }
 
-int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned value, unsigned attr[]){
+int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type, unsigned value){
 	int i = 0;
 	int j;
 	SYMBOL_ENTRY **temp;
@@ -26,9 +19,6 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type,
 	new->kind = kind;
 	new->type = type;
 	new->value = value;
-	for(j = 0; j < MAX_PARAMS; j++){
-		new->attr[j] = attr[j];
-	}
 	new->next = NULL;
 
 	while(*temp != NULL){
@@ -52,25 +42,7 @@ int lookup_symbol(SYMBOL_ENTRY **head, char *name){
 			return -1;
 		}
 		if(strcmp(temp->name, name) == 0){
-			return i;			
-		}
-		temp = temp->next;
-		i++;
-	}
-
-	return i;
-}
-
-int lookup_literal(SYMBOL_ENTRY **head, char *name, unsigned type){
-	int i = 0;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-	while(1){
-		if(temp == NULL){
-			return -1;
-		}
-		if((strcmp(temp->name, name) == 0) && (temp->type == type)){
-				return i;
+			return i;
 		}
 		temp = temp->next;
 		i++;
@@ -160,28 +132,21 @@ unsigned get_value(SYMBOL_ENTRY **head, int index){
 	}
 	return temp->value;
 }
-void set_attr(SYMBOL_ENTRY **head, int index, unsigned attr[]){
-	int i;
+
+unsigned get_func(SYMBOL_ENTRY **head){
+	int i = 0;
+	int j = -1;
 	SYMBOL_ENTRY *temp;
 	temp = *head;
 
-	for(i = 0; i < index; i++){
+	while(temp != NULL){
+		if(temp->kind == FUN){
+			j = i;
+		}
 		temp = temp->next;
+		i++;
 	}
-	for(i = 0; i < MAX_PARAMS; i++){
-		temp->attr[i] = attr[i];
-	}
-
-}
-unsigned *get_attr(SYMBOL_ENTRY **head, int index){
-	int i;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-
-	for(i = 0; i < index; i++){
-		temp = temp->next;
-	}
-	return temp->attr;
+	return j;
 }
 
 unsigned get_total(SYMBOL_ENTRY **head){
@@ -214,7 +179,7 @@ void print_symtab(SYMBOL_ENTRY **head){
 	temp = *head;
 	while(temp != NULL){
 		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, temp->name, temp->kind);
-		printf("TYPE %d;\tVALUE: %d;\tATTR: %d\n", temp->type, temp->value, temp->attr[0]); // SHOULD PRINT ALL ATTR
+		printf("TYPE %d;\tVALUE: %d\n", temp->type, temp->value);
 
 		temp = temp->next;
 		i++;
