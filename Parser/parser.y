@@ -723,10 +723,12 @@ num_exp
 exp
     : literal
         {
+            /*!!! atoi() !!!*/
             $$ = $1;
         }
     | data
         {
+            /*!!! custom map() sym_tab -> memory location !!!*/
             tab_kind = get_kind(&head, $1);
             if(tab_kind == VAR || tab_kind == PAR){
                 $$ = $1;
@@ -737,6 +739,7 @@ exp
         }
     | function_call
         {
+            /*!!! custom map() sym_tab -> label !!!*/
             tab_kind = get_kind(&head, $1);
             if(tab_kind == VOID){
                 printf("ERROR: FUNC CALL ISSUE: no return value of a void kind\n");
@@ -751,6 +754,7 @@ exp
 function_call
     : _ID _LPAREN argument_list _RPAREN /* possible_pointer */
         {
+            /* CAREFULL WITH x1 (ra) */
             tab_ind = lookup_symbol(&head, $1);
             if(tab_ind == -1){ // CHECK IF OFF BY ONE
                 printf("ERROR: FUNC CALL ISSUE: non-existing ID '%s'\n", $1);
@@ -767,7 +771,7 @@ argument_list
     | argument
     ;
 /* ARGUMENTS OF A FUNCTION CALL */
-/* TO BE DELT WITH */
+/* TO BE DELT WITH -- MAP TO THE DATA MEMORY*/
 argument
     : argument _COMMA num_exp
     | num_exp
@@ -777,6 +781,22 @@ argument
 if_statement
     : _IF _LPAREN condition _RPAREN statement %prec ONLY_IF
         {/*
+            if( a != b )
+
+            bne x1, x2, LABEL1
+
+            ... ELSE ...
+
+            jal jump LABEL2
+
+            LABEL1:
+
+            ... IF ...
+
+            LABEL2
+
+            -- LABEL MAKER: IFA1, IFB1... we need an if_counter
+
             if($3 == 1){
                 // DO THE STATEMENT
             }
@@ -879,6 +899,7 @@ rel_exp
 return_statement
     : _RETURN num_exp _SEMICOLON
         {
+            /* WRITE VAL TO THE REGISTER/DATA MEMORY JUMP BACK */
             tab_ind = get_func(&head);
             tab_type = get_type(&head, tab_ind);
             if(tab_type == VOID){
@@ -890,6 +911,9 @@ return_statement
         }
     | _RETURN _SEMICOLON /* FOR VOID ONLY */
         {
+            /* ALWAYS NEEDED OR NOT? */
+
+            /* JUMP BACK */
             tab_ind = get_func(&head);
             tab_type = get_type(&head, tab_ind);
             if(tab_type != VOID){
@@ -901,11 +925,17 @@ return_statement
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 while_statement
     : _WHILE _LPAREN condition _RPAREN statement
+        {
+            /* LIKE IF */
+        }
     ;
 /* SWITCH STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 switch_statement
     : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
+        {
+            /* LIKE IF */
+        }
     ;
 /* LIST OF CASES */
 /* TO BE DELT WITH */
