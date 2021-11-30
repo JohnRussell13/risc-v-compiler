@@ -177,11 +177,19 @@ void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
 
 void print_symtab(SYMBOL_ENTRY **head){
 	int i = 0;
+	int j;
 	SYMBOL_ENTRY *temp;
 	temp = *head;
 	while(temp != NULL){
 		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, temp->name, temp->kind);
-		printf("TYPE %d\n", temp->type);
+		printf("TYPE %d;\t", temp->type);
+		for(j = 0; j < MAX_DIM; j++){
+			if(temp->dimension[j] == 0){
+				printf("\n");
+				break;
+			}
+			printf("DIM %d: %d;\t", j, temp->dimension[j]);
+		}
 
 		temp = temp->next;
 		i++;

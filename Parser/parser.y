@@ -98,27 +98,15 @@
 
 %%
 
+/* SYMBOL TABLE AFTER MAIN IS MAPPED DIRECTLY TO THE DATA MEMORY */
+/* WE MUST CLEAR SYM_TAB AFTER END OF A FUNCTION IN ORDER TO ALLOW NAME RECYCLING */
+/* WHEN WE CALL THE FUNCTION, WE MUST ADD DATA TO THE TOP OF THE DATA MEMORY */
+/* ONLY variable AND assignment CAN CHANGE THE DATA MEMORY (LWI SWI) */
+
 /* WHOLE PROGRAM */
 /* INIT SYM_TAB */
 program
     : function_list //: define_list function_list /* NO INCLUDE */
-        {
-            init_symtab(&head);
-        }
-    ;
-/* NUMBER */
-/* RETURN THE VALUE OF A GIVEN NUMBER */
-literal
-    : _INT_NUMBER
-        {
-            tab_ind = insert_symbol(&head, $1, LIT, INT);
-            $$ = tab_ind;
-        }
-    | _UINT_NUMBER
-        {
-            tab_ind = insert_symbol(&head, $1, LIT, UINT);
-            $$ = tab_ind;
-        }
     ;
 /* LIST OF FUNCTIONS -- RECURSIVE RULE */
 /* NO ACTION */
@@ -146,6 +134,20 @@ function
             tab_ind = lookup_symbol(&head, $2);
             print_symtab(&head);
             clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
+        }
+    ;
+/* NUMBER */
+/* RETURN THE VALUE OF A GIVEN NUMBER */
+literal
+    : _INT_NUMBER
+        {
+            tab_ind = insert_symbol(&head, $1, LIT, INT);
+            $$ = tab_ind;
+        }
+    | _UINT_NUMBER
+        {
+            tab_ind = insert_symbol(&head, $1, LIT, UINT);
+            $$ = tab_ind;
         }
     ;
 /* TYPE */
@@ -319,6 +321,10 @@ compound_statement
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
         {
+            /*printf("LOAD x1 %d", look);
+            printf("ADD x2 x0 x1\n");
+            printf("ADDI x1 x0 %d", atoi(get_name(&head, tab_ind)));
+            printf("SW %d, x1", tab_ind*4);*/
             //set_value(&head, $1, $3);
             //print_symtab(&head);
         }
@@ -952,6 +958,8 @@ change_statement
 /*
 ++ a+b*c
 ++ += -= *= ...
+++ global var
+++ MACRO -- USING PREPROCESSOR, MAYBE INSIDE LEXER
 -- CONST
 -- pointer on a pointer
 -- pointer on a function
