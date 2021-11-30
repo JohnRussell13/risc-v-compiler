@@ -11,6 +11,7 @@ typedef struct sym_entry{
 	char name[SYMBOL_TABLE_LENGTH]; //name of symbol
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
+	unsigned pointer; //type of value of symbol
 	unsigned dimension[MAX_DIM];
 	struct sym_entry *next;
 } SYMBOL_ENTRY;
@@ -32,6 +33,8 @@ void set_type(SYMBOL_ENTRY **head, int index, unsigned type);
 unsigned get_type(SYMBOL_ENTRY **head, int index);
 void set_dimension(SYMBOL_ENTRY **head, int index, unsigned dimension[MAX_DIM], unsigned size);
 unsigned *get_dimension(SYMBOL_ENTRY **head, int index);
+void set_pointer(SYMBOL_ENTRY **head, int index);
+unsigned get_pointer(SYMBOL_ENTRY **head, int index);
 
 /* INDEX OF THE CURRENT FUNCTION */
 unsigned get_func(SYMBOL_ENTRY **head);

@@ -23,6 +23,8 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type)
 		new->dimension[i] = 0;
 	}
 
+	new->pointer = 0;
+
 	i = 0;
 	while(*temp != NULL){
 		temp = &((*temp)->next);
@@ -134,6 +136,26 @@ unsigned *get_dimension(SYMBOL_ENTRY **head, int index){
 	}
 	return temp->dimension;
 }
+void set_pointer(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+
+	for(i = 0; i < index; i++){
+		temp = temp->next;
+	}
+	temp->pointer++;
+}
+unsigned get_pointer(SYMBOL_ENTRY **head, int index){
+	int i;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+
+	for(i = 0; i < index; i++){
+		temp = temp->next;
+	}
+	return temp->pointer;
+}
 
 unsigned get_func(SYMBOL_ENTRY **head){
 	int i = 0;
@@ -163,6 +185,7 @@ unsigned get_total(SYMBOL_ENTRY **head){
 	return i;
 }
 
+
 void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
 	int i;
 	SYMBOL_ENTRY **temp;
@@ -182,7 +205,7 @@ void print_symtab(SYMBOL_ENTRY **head){
 	temp = *head;
 	while(temp != NULL){
 		printf("INDEX: %d;\tNAME: %s;\tKIND: %d;\t", i, temp->name, temp->kind);
-		printf("TYPE %d;\t", temp->type);
+		printf("TYPE %d;\t POINTER: %d\t", temp->type, temp->pointer);
 		for(j = 0; j < MAX_DIM; j++){
 			if(temp->dimension[j] == 0){
 				printf("\n");

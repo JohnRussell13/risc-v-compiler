@@ -182,6 +182,7 @@ possible_pointer
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
                 tab_ind = insert_symbol(&head, tab_name, 0, 0);
+                set_pointer(&head, tab_ind);
                 $$[0] = tab_ind;
                 $$[1] = 1;
             }
