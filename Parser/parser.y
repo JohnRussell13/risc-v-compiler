@@ -270,14 +270,14 @@ array_member_definition
     : array_member_definition _LSQBRACK array_param _RSQBRACK
         {
             if(tab_array_count >= MAX_DIM){
-                printf("ERROR: ARRAY SIZE ISSUE: too many dimensions");
+                printf("ERROR: ARRAY SIZE ISSUE: too many dimensions\n");
             }
             $$[tab_array_count++] = $3;
         }
     | _LSQBRACK array_param _RSQBRACK
         {
             if(tab_array_count >= MAX_DIM){
-                printf("ERROR: ARRAY SIZE ISSUE: too many dimensions");
+                printf("ERROR: ARRAY SIZE ISSUE: too many dimensions\n");
             }
             $$[tab_array_count++] = $2;
         }
@@ -326,7 +326,7 @@ assignment_statement
         }
     | data _ASSIGN _AMP data _SEMICOLON
         {
-            printf("add t0, %d, x0\n", 4*$1);
+            printf("addi t0, x0, %d\n", 4*$1);
             printf("sw t0, %d, x0\n", 4*$1);
         }
     | data _ITER _SEMICOLON
@@ -335,7 +335,8 @@ assignment_statement
                 printf("addi t0, t0, 1\n");
             }
             else{
-                printf("subi t0, t0, 1\n");
+                printf("addi t1, x0, 1\n");
+                printf("sub t0, t0, t1\n");
             }
             printf("sw t0, %d, x0\n", 4*$1);
         }
@@ -345,7 +346,8 @@ assignment_statement
                 printf("addi t0, t0, 1\n");
             }
             else{
-                printf("subi t0, t0, 1\n");
+                printf("addi t1, x0, 1\n");
+                printf("sub t0, t0, t1\n");
             }
             printf("sw t0, %d, x0\n", 4*$1);
         }
@@ -506,19 +508,19 @@ num_exp
                     printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
                     break;
                 case DIV:
-                    printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
                     break;
                 case MOD:
-                    printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
                     break;
                 case SR:
-                    printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("srl t1, t1, t2\n");
                     break;
                 case SL:
-                    printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("sll t1, t1, t2\n");
                     break;
                 case AMP:
@@ -590,18 +592,20 @@ num_exp
                 printf("addi t3, t1, 1\n");
             }
             else{
-                printf("subi t3, t1, 1\n");
+                printf("addi t3, x0, 1\n");
+                printf("sub t0, t1, t3\n");
             }
             printf("sw t0, %d, x0\n", 4*$1);
         }
     | _ITER data
         {
-            printf("lw t1, %d, x0", 4*$1);
+            printf("lw t1, %d, x0\n", 4*$1);
             if($2 == INC){
                 printf("addi t1, t1, 1\n");
             }
             else{
-                printf("subi t1, t1, 1\n");
+                printf("addi t2, x0, 1\n");
+                printf("sub t1, t1, t2\n");
             }
             printf("add t2, x0, t1\n");
             printf("sw t0, %d, x0\n", 4*$1);
@@ -896,7 +900,7 @@ int yyerror(char *s){
 }
 
 void warning(char *s){
-	fprintf(stderr,"\nline %d: WARNING: %s",yylineno,s);
+	fprintf(stderr,"\nline %d: WARNING: %s\n",yylineno,s);
 	warning_count++;
 }
 int main(){

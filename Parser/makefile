@@ -8,7 +8,9 @@ clean:
 	rm -f $(ODIR)/*.o parser res.txt lex.yy.c parser.tab.h parser.tab.c
 
 run:
-	echo "----- 1 -----" > res.txt
+	echo "----- 0 -----" > res.txt
+	./parser < ./../"Test Codes"/test0.c >> res.txt
+	echo "----- 1 -----" >> res.txt
 	./parser < ./../"Test Codes"/test1.c >> res.txt
 	echo "----- 2 -----" >> res.txt
 	./parser < ./../"Test Codes"/test2.c >> res.txt
