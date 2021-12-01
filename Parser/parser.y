@@ -84,11 +84,12 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type literal data exp function_call //mac_exp mac_num_exp
-%type <pp> possible_pointer
-%type <a> ar_op log_op
-%type <ar> array_member_definition array_member
-%type <i> array_param //value
+%type <i> type literal data function_call // index
+%type <pp> possible_pointer // index AND is it new
+%type <a> ar_op log_op // operation
+%type <ar> array_member_definition array_member // dimension
+%type <i> array_param // value?
+%type <pp> exp // index AND which rule
 
 /* SPECIAL RULES */
 %nonassoc ONLY_IF   /* NOT ALWAYS; JUST IN THE CASE THAT THERE IS NO ELSE (HENCE NO _ - ONLY_IF IS NOT A TOKEN) */
@@ -106,7 +107,7 @@
 /* WHOLE PROGRAM */
 /* INIT SYM_TAB */
 program
-    : function_list //: define_list function_list /* NO INCLUDE */
+    : function_list
     ;
 /* LIST OF FUNCTIONS -- RECURSIVE RULE */
 /* NO ACTION */
@@ -119,10 +120,9 @@ function_list
 function
     : type _ID
         {
-            tab_ind = lookup_symbol(&head, $2); //ALSO OK TO USE tab_func_ind
+            tab_ind = lookup_symbol(&head, $2);
             if(tab_ind == -1){
                 tab_ind = insert_symbol(&head, $2, FUN, $1);
-                //printf("%d\n", tab_ind);
             }
             else{
                 printf("ERROR: redefinition of a function '%s'\n", $2);
@@ -132,7 +132,7 @@ function
         _LPAREN parameter_list _RPAREN body
         {
             tab_ind = lookup_symbol(&head, $2);
-            print_symtab(&head);
+            //print_symtab(&head);
             clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
         }
     ;
@@ -151,9 +151,9 @@ literal
         }
     ;
 /* TYPE */
-/* RETURN TYPE */
+/* RETURN TYPE */ /* MAYBE EXPAND WITH CONST */
 type
-    : _TYPE /* MAYBE EXPAND WITH CONST */
+    : _TYPE
         {
             $$ = $1;
         }
@@ -163,7 +163,6 @@ type
 possible_pointer
     : _ID
         {
-            //printf("%s\n", $1);
             strcpy(tab_name, $1);
             tab_ind = lookup_symbol(&head, tab_name);
             if(tab_ind == -1){
@@ -254,7 +253,7 @@ variable
             if($2[1]){
                 set_type(&head, $2[0], $1);
                 set_kind(&head, $2[0], VAR);
-                tab_array_count = 0; //SET COUNTER TO 0
+                tab_array_count = 0;
             }
             else{
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -322,29 +321,33 @@ compound_statement
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
         {
-            /*printf("LOAD x1 %d", look);
-            printf("ADD x2 x0 x1\n");
-            printf("ADDI x1 x0 %d", atoi(get_name(&head, tab_ind)));
-            printf("SW %d, x1", tab_ind*4);*/
-            //set_value(&head, $1, $3);
-            //print_symtab(&head);
+            printf("add t0, x0, t1\n"); // PUT num_exp ON t1
+            printf("sw t0, %d, x0\n", 4*$1); // 4*$1 IS A SIMPLE MAP: SYM_TAB -> DATA MEMORY
         }
     | data _ASSIGN _AMP data _SEMICOLON
         {
-            //set_value(&head, $1, $4);
-            //print_symtab(&head);
+            printf("add t0, %d, x0\n", 4*$1);
+            printf("sw t0, %d, x0\n", 4*$1);
         }
     | data _ITER _SEMICOLON
         {
-            /*tab_val = get_value(&head, $1);
             if($2 == INC){
-                tab_val++;
+                printf("addi t0, t0, 1\n");
             }
             else{
-                tab_val--;
-            }*/
-            //set_value(&head, $1, tab_val);
-            //print_symtab(&head);
+                printf("subi t0, t0, 1\n");
+            }
+            printf("sw t0, %d, x0\n", 4*$1);
+        }
+    | _ITER data _SEMICOLON
+        {
+            if($2 == INC){
+                printf("addi t0, t0, 1\n");
+            }
+            else{
+                printf("subi t0, t0, 1\n");
+            }
+            printf("sw t0, %d, x0\n", 4*$1);
         }
     ;
 /* possible_pointer OR array of possible_pointer */
@@ -451,272 +454,157 @@ log_op
     ;
 /* NUMERICAL EXPRESSION -- (x+7)*sq(3) */
 /* TO BE DELT WITH -- PRINT ASSEMBLY CODE BY STORING THE INTERMEDIATE RESULTS */
+/* RESULTS ARE TO BE KEPT IN x6 (t1) */
 num_exp
     : exp
         {
-            //$$ = $1;
+            switch($1[1]){
+                case 0:
+                    printf("addi t1, x0, %d\n", atoi(get_name(&head, $1[0])));
+                    break;
+                case 1:
+                    printf("lw t1, %d, x0\n", 4*$1[0]);
+                    break;
+                case 2:
+                    /* DEAL WITH FUNCTION RETURN */
+                    break;
+            }
+            printf("add t2, x0, t1\n");
         }
     | exp ar_op exp
-        {/*
+        {
+            switch($1[1]){
+                case 0:
+                    printf("addi t1, x0, %d\n", atoi(get_name(&head, $1[0])));
+                    break;
+                case 1:
+                    printf("lw t1, %d, x0\n", 4*$1[0]);
+                    break;
+                case 2:
+                    /* DEAL WITH FUNCTION RETURN */
+                    break;
+            }
+            switch($3[1]){
+                case 0:
+                    printf("addi t2, x0, %d\n", atoi(get_name(&head, $3[0])));
+                    break;
+                case 1:
+                    printf("lw t2, %d, x0\n", 4*$3[0]);
+                    break;
+                case 2:
+                    /* DEAL WITH FUNCTION RETURN */
+                    break;
+            }
             switch($2){
                 case PLUS:
-                    //CONSIDER:
-                    //LOAD x <- $1
-                    //LOAD y <- $3
-                    //ADD z, x, y
-                    //x, y AND z ARE REGISTERS
-                    //WE WILL USE atoi(get_name($1)) FOR literal
-
-                    //tab_val = $1 + $3;
+                    printf("add t1, t1, t2\n");
                     break;
                 case MINUS:
-                    //tab_val = $1 - $3;
+                    printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    //tab_val = $1 * $3;
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
                     break;
                 case DIV:
-                    if($3 == 0){
-                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    }
-                    else{
-                        //tab_val = $1 / $3;
-                    }
+                    printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
                     break;
                 case MOD:
-                    if($3 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
-                    }
-                    else{
-                        //tab_val = $1 % $3;
-                    }
+                    printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
                     break;
                 case SR:
-                    if($3 < 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $1 >> $3;
-                    }
+                    printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("srl t1, t1, t2\n");
                     break;
                 case SL:
-                    if($3 < 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $1 << $3;
-                    }
+                    printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("sll t1, t1, t2\n");
                     break;
                 case AMP:
-                    //tab_val = $1 & $3;
+                    printf("and t1, t1, t2\n");
                     break;
                 case BOR:
-                    //tab_val = $1 | $3;
+                    printf("or t1, t1, t2\n");
                     break;
                 case BXOR:
-                    //tab_val = $1 ^ $3;
+                    printf("xor t1, t1, t2\n");
                     break;
                 default:
                     printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
                     break;
             }
-            //$$ = tab_val;*/
+            printf("add t2, x0, t1\n");
         }
     | _LPAREN num_exp _RPAREN ar_op exp
-        {/*
-            switch($4){
-                case PLUS:
-                    //tab_val = $2 + $5;
-                    break;
-                case MINUS:
-                    //tab_val = $2 - $5;
-                    break;
-                case STAR:
-                    //tab_val = $2 * $5;
-                    break;
-                case DIV:
-                    if($5 == 0){
-                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    }
-                    else{
-                        //tab_val = $2 / $5;
-                    }
-                    break;
-                case MOD:
-                    if($5 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
-                    }
-                    else{
-                        //tab_val = $2 % $5;
-                    }
-                    break;
-                case SR:
-                    if($5 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $2 >> $5;
-                    }
-                    break;
-                case SL:
-                    if($5 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $2 << $5;
-                    }
-                    break;
-                case AMP:
-                    //tab_val = $2 & $5;
-                    break;
-                case BOR:
-                    //tab_val = $2 | $5;
-                    break;
-                case BXOR:
-                    //tab_val = $2 ^ $5;
-                    break;
-                default:
-                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
-                    break;
-            }
-            //$$ = tab_val;*/
+        {
+            // ...
+            printf("add t2, x0, t1\n");
         }
     | exp ar_op _LPAREN num_exp _RPAREN
-        {/*
-            switch($2){
-                case PLUS:
-                    //tab_val = $1 + $4;
-                    break;
-                case MINUS:
-                    //tab_val = $1 - $4;
-                    break;
-                case STAR:
-                    //tab_val = $1 * $4;
-                    break;
-                case DIV:
-                    if($4 == 0){
-                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    }
-                    else{
-                        //tab_val = $1 / $4;
-                    }
-                    break;
-                case MOD:
-                    if($4 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
-                    }
-                    else{
-                        //tab_val = $1 % $4;
-                    }
-                    break;
-                case SR:
-                    if($4 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $1 >> $4;
-                    }
-                    break;
-                case SL:
-                    if($4 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $1 << $4;
-                    }
-                    break;
-                case AMP:
-                    //tab_val = $1 & $4;
-                    break;
-                case BOR:
-                    //tab_val = $1 | $4;
-                    break;
-                case BXOR:
-                    //tab_val = $1 ^ $4;
-                    break;
-                default:
-                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
-                    break;
-            }
-            //$$ = tab_val;*/
+        {
+            // ...
+            printf("add t2, x0, t1\n");
         }
     | _LPAREN num_exp _RPAREN ar_op _LPAREN num_exp _RPAREN
-        {/*
-            switch($4){
-                case PLUS:
-                    //tab_val = $2 + $6;
-                    break;
-                case MINUS:
-                    //tab_val = $2 - $6;
-                    break;
-                case STAR:
-                    //tab_val = $2 * $6;
-                    break;
-                case DIV:
-                    if($6 == 0){
-                        printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    }
-                    else{
-                        //tab_val = $2 / $6;
-                    }
-                    break;
-                case MOD:
-                    if($6 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
-                    }
-                    else{
-                        //tab_val = $2 % $6;
-                    }
-                    break;
-                case SR:
-                    if($6 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $2 >> $6;
-                    }
-                    break;
-                case SL:
-                    if($6 <= 0){
-                        printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
-                    }
-                    else{
-                        //tab_val = $2 << $6;
-                    }
-                    break;
-                case AMP:
-                    //tab_val = $2 & $6;
-                    break;
-                case BOR:
-                    //tab_val = $2 | $6;
-                    break;
-                case BXOR:
-                    //tab_val = $2 ^ $6;
-                    break;
-                default:
-                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
-                    break;
-            }
-            //$$ = tab_val;*/
+        {
+            // ...
+            printf("add t2, x0, t1\n"); // WRITE TO BOTH t1 AND t2 JUST FOR THIS REASON
         }
     | _PLUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
-            //$$ = $2;
+            switch($2[1]){
+                case 0:
+                    printf("addi t1, x0, %d\n", atoi(get_name(&head, $2[0])));
+                    break;
+                case 1:
+                    printf("lw t1, %d, x0\n", 4*$2[0]);
+                    break;
+                case 2:
+                    /* DEAL WITH FUNCTION RETURN */
+                    break;
+            }
+            printf("add t2, x0, t1\n");
         }
     | _MINUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
-            //$$ = -$2;
+            switch($2[1]){
+                case 0:
+                    printf("addi t1, x0, %d\n", atoi(get_name(&head, $2[0])));
+                    break;
+                case 1:
+                    printf("lw t1, %d, x0\n", 4*$2[0]);
+                    break;
+                case 2:
+                    /* DEAL WITH FUNCTION RETURN */
+                    break;
+            }
+            printf("sub t1, x0, t1\n");
+            printf("add t2, x0, t1\n");
         }
     | data _ITER
         {
-            //tab_val = get_value(&head, $1);
+            printf("lw t1, %d, x0\n", 4*$1);
+            printf("add t2, x0, t1\n");
             if($2 == INC){
-                //set_value(&head, $2, ++tab_val);
+                printf("addi t3, t1, 1\n");
             }
             else{
-                //set_value(&head, $2, --tab_val);
+                printf("subi t3, t1, 1\n");
             }
-            //$$ = tab_val;
+            printf("sw t0, %d, x0\n", 4*$1);
+        }
+    | _ITER data
+        {
+            printf("lw t1, %d, x0", 4*$1);
+            if($2 == INC){
+                printf("addi t1, t1, 1\n");
+            }
+            else{
+                printf("subi t1, t1, 1\n");
+            }
+            printf("add t2, x0, t1\n");
+            printf("sw t0, %d, x0\n", 4*$1);
         }
     ;
 /* ALLOWED PARTS OF num_exp */
@@ -725,14 +613,16 @@ exp
     : literal
         {
             /*!!! atoi() !!!*/
-            $$ = $1;
+            $$[0] = $1;
+            $$[1] = 0;
         }
     | data
         {
             /*!!! custom map() sym_tab -> memory location !!!*/
             tab_kind = get_kind(&head, $1);
             if(tab_kind == VAR || tab_kind == PAR){
-                $$ = $1;
+                $$[0] = $1;
+                $$[1] = 1;
             }
             else{
                 printf("ERROR: EXPRESSION ISSUE: no value of a non-VAR and non-PAR kind\n");
@@ -746,7 +636,8 @@ exp
                 printf("ERROR: FUNC CALL ISSUE: no return value of a void kind\n");
             }
             else{
-                $$ = $1;
+                $$[0] = $1;
+                $$[1] = 2;
             }
         }
     ;
