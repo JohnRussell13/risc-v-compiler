@@ -213,6 +213,9 @@ parameter
     | type possible_pointer
         {
             strcpy(tab_name, get_name(&head, $2[0]));
+            if($1 == VOID){
+                printf("ERROR: PARAM DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
+            }
             if($2[1]){
                 set_type(&head, $2[0], $1);
                 set_kind(&head, $2[0], PAR);
@@ -239,6 +242,9 @@ variable
     : type possible_pointer _SEMICOLON
         {
             strcpy(tab_name, get_name(&head, $2[0]));
+            if($1 == VOID){
+                printf("ERROR: VAR DEF ISSUE: variable '%s' can not be of VOID type\n",tab_name);
+            }
             if($2[1]){
                 set_type(&head, $2[0], $1);
                 set_kind(&head, $2[0], VAR);
@@ -698,7 +704,18 @@ if_statement
             }
             else{
                 // DON'T DO IT
-            }*/
+            }
+            if0:
+                lw t0 $3
+                //printf("lw t0, %d, x0\n", 4*$1[0]);
+                bne t0 1 false0
+            true0:
+                sw $5,t1
+                //printf("sw t1, %d, x0\n", 4*$1);
+                JMP exit0
+            false0:
+                JMP exit0
+            exit0:*/
         }
     | _IF _LPAREN condition _RPAREN statement _ELSE statement
         {/*
@@ -707,7 +724,18 @@ if_statement
                 }
                 else{
                     // DO THE STATEMENT $7
-                }*/
+                }
+                if0:
+                        lw t0 $3
+                        //printf("lw t0, %d, x0\n", 4*$1[0]);
+                        bne t0 1 false0
+                true0:
+                        sw $5,t1
+                        //printf("sw t1, %d, x0\n", 4*$1);
+                        JMP exit0
+                false0:
+                        JMP exit0
+                exit0: */
         }
     ;
 /* CONDITION WHEN BRANCHING */
@@ -726,7 +754,7 @@ condition
                 case(OR):
                     //tab_val = $2 || $6;
                     break;
-           	    default:
+                default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
@@ -741,7 +769,7 @@ condition
                 case(OR):
                     //tab_val = $1 || $3;
                     break;
-           	    default:
+             default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
@@ -754,39 +782,39 @@ rel_exp
     : num_exp _RELOP num_exp
         {/*
             switch($2){
-            	case(LT):
-            		if($1 < $3)
-            			//$$ = 1;
-            		else 
-            			//$$ = 0;
-            		break;
-           	    case(LEQ):
-            		if($1 <= $3)
-            			//$$ = 1;
-            		else 
-            			//$$ = 0;
-            		break;
-           	    case(GT):
-            		if($1 > $3)
-            			//$$ = 1;
-            		else 
-            			//$$ = 0;
-            		break;
-           	    case(GEQ):
-            		if($1 >= $3)
-            			//$$ = 1;
-            		else 
-            			//$$ = 0;
-            		break;
-           	    case(EQ):
-            		if($1 == $3)
-            			//$$ = 1;
-            		else 
-            			//$$ = 0;
-            		break;
-           	    default:
-                    printf("ERROR: REL OP ISSUE: wrong operator\n");
-                    break;
+                case(LT):
+                    if($1 < $3)
+                      //$$ = 1;
+                    else 
+                     //$$ = 0;
+                 break;
+                 case(LEQ):
+                     if($1 <= $3)
+                         //$$ = 1;
+                     else 
+                       //$$ = 0;
+                 break;
+                 case(GT):
+                     if($1 > $3)
+                         //$$ = 1;
+                     else 
+                         //$$ = 0;
+                  break;
+                  case(GEQ):
+                      if($1 >= $3)
+                          //$$ = 1;
+                      else 
+                          //$$ = 0;
+                  break;
+                  case(EQ):
+                      if($1 == $3)
+                          //$$ = 1;
+                      else 
+                          //$$ = 0;
+                      break;
+                  default:
+                      printf("ERROR: REL OP ISSUE: wrong operator\n");
+                  break;
            }*/
         }
     ;
@@ -800,10 +828,12 @@ return_statement
             tab_type = get_type(&head, tab_ind);
             if(tab_type == VOID){
                 printf("ERROR: RETURN ISSUE: value in a void type\n");
-            }
-            else{
+            }/*
+            else if(tab_type != ){
+                printf("ERROR: RETURN ISSUE: incompatible types in return\n");
+            }else{
                 //set_value(&head, tab_ind, $2);
-            }
+            }*/
         }
     | _RETURN _SEMICOLON /* FOR VOID ONLY */
         {
@@ -831,6 +861,12 @@ switch_statement
     : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
         {
             /* LIKE IF */
+            /*
+            switch_var_index = lookup_symbol($3,VAR);
+            if(switch_var_index == -1_){
+                 printf("SWITCH STATEMENT ERR: variable '%s' is not defined\n",tab_name);
+            }
+            */
         }
     ;
 /* LIST OF CASES */
@@ -916,14 +952,14 @@ int main(){
     clear_symbols(&head,0);
     
     if(warning_count)
-    	printf("\n%d warning(s).\n",warning_count);
-    	
+        printf("\n%d warning(s).\n",warning_count);
+    
     if(error_count)
-    	printf("\n%d error(s).\n",error_count);
-    	
+         printf("\n%d error(s).\n",error_count);
+    
     if(syntax_error)
-    	return -1;
+        return -1;
     else
-    	return error_count;
+        return error_count;
 }
     

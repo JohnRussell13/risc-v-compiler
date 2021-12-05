@@ -1,6 +1,9 @@
 //TEST ALU OPS
 
 //#define y 3
+int add(void a,int b){
+	return a+b;
+}
 
 int main(){
     int x;
@@ -13,6 +16,7 @@ int main(){
 
     x = 2;
     y = 3;
+    add(x,y);
     z0 = x + y;
     w = x - z0;
     q = x << y;
