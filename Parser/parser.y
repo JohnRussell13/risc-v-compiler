@@ -478,6 +478,9 @@ num_exp
                     break;
             }
             printf("add t2, x0, t1\n");
+            printf("add t3, x0, %d", 4*num_exp_cnt);
+            num_exp_cnt++;
+            printf("sw t1, t3, 0");
         }
     | exp ar_op exp
         {
@@ -681,61 +684,21 @@ argument
 /* IF STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */ /* SEE HOW TO NOT MAKE THE CHANGES WHEN NOT ALLOWED */
 if_statement
-    : _IF _LPAREN condition _RPAREN statement %prec ONLY_IF
-        {/*
-            if( a != b )
-
-            bne x1, x2, LABEL1
-
-            ... ELSE ...
-
-            jal jump LABEL2
-
-            LABEL1:
-
-            ... IF ...
-
-            LABEL2
-
-            -- LABEL MAKER: IFA1, IFB1... we need an if_counter
-
-            if($3 == 1){
-                // DO THE STATEMENT
-            }
-            else{
-                // DON'T DO IT
-            }
-            if0:
-                lw t0 $3
-                //printf("lw t0, %d, x0\n", 4*$1[0]);
-                bne t0 1 false0
-            true0:
-                sw $5,t1
-                //printf("sw t1, %d, x0\n", 4*$1);
-                JMP exit0
-            false0:
-                JMP exit0
-            exit0:*/
+    : _IF _LPAREN condition _RPAREN
+        {
+            printf("beq t1, x0, LABEL1");
         }
-    | _IF _LPAREN condition _RPAREN statement _ELSE statement
-        {/*
-                if($3 == 1){
-                    // DO THE STATEMENT $5
-                }
-                else{
-                    // DO THE STATEMENT $7
-                }
-                if0:
-                        lw t0 $3
-                        //printf("lw t0, %d, x0\n", 4*$1[0]);
-                        bne t0 1 false0
-                true0:
-                        sw $5,t1
-                        //printf("sw t1, %d, x0\n", 4*$1);
-                        JMP exit0
-                false0:
-                        JMP exit0
-                exit0: */
+        statement _ELSE
+        {
+            //IF
+            printf("jal t2, EXIT");
+            printf("LABEL1:");
+        }
+        statement
+        {
+            //ELSE
+            printf("EXIT:");
+            
         }
     ;
 /* CONDITION WHEN BRANCHING */
@@ -743,79 +706,82 @@ if_statement
 condition
     : rel_exp
         {
-            //$$ = $1;
+            // empty
         }
     | _LPAREN condition _RPAREN log_op _LPAREN condition _RPAREN
         {
             switch($4){
                 case(AND):
-                    //tab_val = $2 && $6;
+                    printf("add t1, t1, t2");
                     break;
                 case(OR):
-                    //tab_val = $2 || $6;
+                    printf("or t1, t1, t2");
                     break;
-                default:
+           	    default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
-            //$$ = tab_val;
         }
     | rel_exp log_op rel_exp
         {
             switch($2){
                 case(AND):
-                    //tab_val = $1 && $3;
+                    printf("add t1, t1, t2");
                     break;
                 case(OR):
-                    //tab_val = $1 || $3;
+                    printf("or t1, t1, t2");
                     break;
-             default:
+           	    default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
-            //$$ = tab_val;
         }
     ;
 /* REALATIONAL EXPRESSION */
 /* TO BE DELT WITH -- PRINT ASSEMBLY CODE 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 rel_exp
     : num_exp _RELOP num_exp
-        {/*
+        {
+            /*
+            a <= b
+            a == b || a < b
+            slt y, a, b
+            seq z, a, b
+            or x, y, z
+
+
+            a != b
+            slt y, a, b
+            slt z, b, a
+            or x, y, z
+
+
+            a == b
+            slt y, a, b
+            slt z, b, a
+            or x, y, z
+            xor x, x, 1
+
+            */
             switch($2){
-                case(LT):
-                    if($1 < $3)
-                      //$$ = 1;
-                    else 
-                     //$$ = 0;
-                 break;
-                 case(LEQ):
-                     if($1 <= $3)
-                         //$$ = 1;
-                     else 
-                       //$$ = 0;
-                 break;
-                 case(GT):
-                     if($1 > $3)
-                         //$$ = 1;
-                     else 
-                         //$$ = 0;
-                  break;
-                  case(GEQ):
-                      if($1 >= $3)
-                          //$$ = 1;
-                      else 
-                          //$$ = 0;
-                  break;
-                  case(EQ):
-                      if($1 == $3)
-                          //$$ = 1;
-                      else 
-                          //$$ = 0;
-                      break;
-                  default:
-                      printf("ERROR: REL OP ISSUE: wrong operator\n");
-                  break;
-           }*/
+            	case(LT):
+            		printf("slt t1, t1, t2");
+                    break;
+           	    case(LEQ):
+            		break;
+           	    case(GT):
+            		printf("slt t1, t2, t1");
+            		break;
+           	    case(GEQ):
+            		break;
+           	    case(EQ):
+            		break;
+           	    case(NEQ):
+            		break;
+           	    default:
+                    printf("ERROR: REL OP ISSUE: wrong operator\n");
+                    break;
+           }
         }
     ;
 /* RETURN STATMENT -- EITHER retur x; OR return; */
@@ -828,12 +794,10 @@ return_statement
             tab_type = get_type(&head, tab_ind);
             if(tab_type == VOID){
                 printf("ERROR: RETURN ISSUE: value in a void type\n");
-            }/*
-            else if(tab_type != ){
-                printf("ERROR: RETURN ISSUE: incompatible types in return\n");
-            }else{
+            }
+            else{
                 //set_value(&head, tab_ind, $2);
-            }*/
+            }
         }
     | _RETURN _SEMICOLON /* FOR VOID ONLY */
         {
@@ -861,12 +825,6 @@ switch_statement
     : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
         {
             /* LIKE IF */
-            /*
-            switch_var_index = lookup_symbol($3,VAR);
-            if(switch_var_index == -1_){
-                 printf("SWITCH STATEMENT ERR: variable '%s' is not defined\n",tab_name);
-            }
-            */
         }
     ;
 /* LIST OF CASES */
@@ -952,14 +910,14 @@ int main(){
     clear_symbols(&head,0);
     
     if(warning_count)
-        printf("\n%d warning(s).\n",warning_count);
-    
+    	printf("\n%d warning(s).\n",warning_count);
+    	
     if(error_count)
-         printf("\n%d error(s).\n",error_count);
-    
+    	printf("\n%d error(s).\n",error_count);
+    	
     if(syntax_error)
-        return -1;
+    	return -1;
     else
-        return error_count;
+    	return error_count;
 }
     
