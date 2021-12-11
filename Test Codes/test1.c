@@ -24,14 +24,14 @@ int main(){
 
     x = 5;
 
-    while(x>0){
+    /*while(x>0){
     	if(x == 2)
     		continue;
     	if(x == 4)
     		break;
     	x--;
     }
-
+*/
     x = 2;
 
     switch(x){

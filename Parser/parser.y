@@ -10,6 +10,7 @@
     extern int yylineno;
     int error_count;
     int warning_count;
+    int num_exp_cnt;
 
     /* SYM_TAB HELPER VARIABLES */
     char tab_name[SYMBOL_TABLE_LENGTH];
@@ -80,6 +81,7 @@
 
 %token <s> _INT_NUMBER
 %token <s> _UINT_NUMBER
+%token <s> _HEX_NUMBER
 
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
@@ -147,6 +149,11 @@ literal
     | _UINT_NUMBER
         {
             tab_ind = insert_symbol(&head, $1, LIT, UINT);
+            $$ = tab_ind;
+        }
+    | _HEX_NUMBER
+        {
+            tab_ind = insert_symbol(&head, $1, LIT, HEX_NUMBER);
             $$ = tab_ind;
         }
     ;
