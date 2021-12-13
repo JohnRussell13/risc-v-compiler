@@ -633,8 +633,10 @@ exp
     : literal
         {
             /*!!! atoi() !!!*/
-            $$[0] = $1;
-            $$[1] = 0;
+            //$$[0] = $1;
+            printf("addi t1, x0, %d\n", atoi(get_name(&head, $1)));
+            //$$[1] = 0;
+            printf("addi t1, x0, 0\n");
         }
     | data
         {
@@ -724,7 +726,7 @@ condition
                 case(OR):
                     printf("or t1, t1, t2");
                     break;
-           	    default:
+               default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
@@ -738,7 +740,7 @@ condition
                 case(OR):
                     printf("or t1, t1, t2");
                     break;
-           	    default:
+               default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
@@ -771,23 +773,37 @@ rel_exp
 
             */
             switch($2){
-            	case(LT):
-            		printf("slt t1, t1, t2");
+                case(LT):
+                    printf("slt t1, t1, t2");
                     break;
-           	    case(LEQ):
-            		break;
-           	    case(GT):
-            		printf("slt t1, t2, t1");
-            		break;
-           	    case(GEQ):
-            		break;
-           	    case(EQ):
-            		break;
-           	    case(NEQ):
-            		break;
-           	    default:
+                case(LEQ):
+                    printf("xor t1,t1,t2");
+                    printf("bne t1,0,EXIT");
+                    printf("slt t1,t1,t2");
+                    printf("EXIT:");
+                    break;
+                case(GT):
+                    printf("slt t1, t2, t1");
+                    break;
+                case(GEQ):
+                    printf("xor t1,t1,t2");
+                    printf("bne t1,0,EXIT");
+                    printf("slt t1,t2,t1");
+                    printf("EXIT:");
+                    break;
+		case(EQ):
+	            printf("xor t1,t1,t2");
+                    printf("bne t1,0,EXIT");
+                    printf("EXIT:");
+                    break;
+                case(NEQ):
+                    printf("xor t1,t1,t2");
+                    printf("bne t1,1,EXIT");
+                    printf("EXIT:");
+                    break;
+                default:
                     printf("ERROR: REL OP ISSUE: wrong operator\n");
-                    break;
+                break;
            }
         }
     ;
@@ -917,14 +933,13 @@ int main(){
     clear_symbols(&head,0);
     
     if(warning_count)
-    	printf("\n%d warning(s).\n",warning_count);
-    	
+        printf("\n%d warning(s).\n",warning_count);
     if(error_count)
-    	printf("\n%d error(s).\n",error_count);
-    	
+        printf("\n%d error(s).\n",error_count);
+
     if(syntax_error)
-    	return -1;
+        return -1;
     else
-    	return error_count;
+        return error_count;
 }
     
