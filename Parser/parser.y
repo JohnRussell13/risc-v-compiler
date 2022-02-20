@@ -10,7 +10,8 @@
     extern int yylineno;
     int error_count;
     int warning_count;
-    int num_exp_cnt;
+    int num_exp_cnt = 0; // not in use now, but needed to make deep nested expresions possible; also needed for rel
+    int lab_cnt = 0;
 
     /* SYM_TAB HELPER VARIABLES */
     char tab_name[SYMBOL_TABLE_LENGTH];
@@ -88,7 +89,7 @@
 /* $$ IS USED TO SET A VALUE */
 %type <i> type literal data function_call // index
 %type <pp> possible_pointer // index AND is it new
-%type <a> ar_op log_op // operation
+%type <a> ar_op log_op helper_exp helper_cond helper_cond_simp // operation
 %type <ar> array_member_definition array_member // dimension
 %type <i> array_param // value?
 %type <pp> exp // index AND which rule
@@ -330,7 +331,8 @@ compound_statement
     : _LBRACKET statement_list _RBRACKET
     ;
 /* ASSIGNMENT -- x = 5;*/
-/* TO BE DELT WITH -- PRINT ASSEMBLY CODE */
+/* PRINT ASSEMBLY CODE */
+/* TO BE DELT WITH -- i++ vs ++i */
 assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
         {
@@ -355,14 +357,14 @@ assignment_statement
         }
     | _ITER data _SEMICOLON
         {
-            if($2 == INC){
+            if($1 == INC){
                 printf("addi t0, t0, 1\n");
             }
             else{
                 printf("addi t1, x0, 1\n");
                 printf("sub t0, t0, t1\n");
             }
-            printf("sw t0, %d, x0\n", 4*$1);
+            printf("sw t0, %d, x0\n", 4*$2);
         }
     ;
 /* possible_pointer OR array of possible_pointer */
@@ -468,8 +470,9 @@ log_op
         }
     ;
 /* NUMERICAL EXPRESSION -- (x+7)*sq(3) */
-/* TO BE DELT WITH -- PRINT ASSEMBLY CODE BY STORING THE INTERMEDIATE RESULTS */
-/* RESULTS ARE TO BE KEPT IN x6 (t1) */
+/* PRINT ASSEMBLY CODE BY STORING THE INTERMEDIATE RESULTS */
+/* RESULTS ARE KEPT IN t1 AND t2 */
+/* TO BE DELT WITH0 - *, /, FUNCTIONS */
 num_exp
     : exp
         {
@@ -484,10 +487,6 @@ num_exp
                     /* DEAL WITH FUNCTION RETURN */
                     break;
             }
-            printf("add t2, x0, t1\n");
-            printf("add t3, x0, %d\n", 4*num_exp_cnt);
-            num_exp_cnt++;
-            printf("sw t1, t3, 0\n");
         }
     | exp ar_op exp
         {
@@ -552,22 +551,159 @@ num_exp
                     printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
                     break;
             }
-            printf("add t2, x0, t1\n");
-        }
-    | _LPAREN num_exp _RPAREN ar_op exp
-        {
-            // ...
-            printf("add t2, x0, t1\n");
         }
     | exp ar_op _LPAREN num_exp _RPAREN
         {
-            // ...
             printf("add t2, x0, t1\n");
+            switch($1[1]){
+                case 0:
+                    printf("addi t1, x0, %d\n", atoi(get_name(&head, $1[0])));
+                    break;
+                case 1:
+                    printf("lw t1, %d, x0\n", 4*$1[0]);
+                    break;
+                case 2:
+                    /* DEAL WITH FUNCTION RETURN */
+                    break;
+            }
+            switch($2){
+                case PLUS:
+                    printf("add t1, t1, t2\n");
+                    break;
+                case MINUS:
+                    printf("sub t1, t1, t2\n");
+                    break;
+                case STAR:
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+                    break;
+                case DIV:
+                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
+                    break;
+                case MOD:
+                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
+                    break;
+                case SR:
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("srl t1, t1, t2\n");
+                    break;
+                case SL:
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("sll t1, t1, t2\n");
+                    break;
+                case AMP:
+                    printf("and t1, t1, t2\n");
+                    break;
+                case BOR:
+                    printf("or t1, t1, t2\n");
+                    break;
+                case BXOR:
+                    printf("xor t1, t1, t2\n");
+                    break;
+                default:
+                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
+                    break;
+            }
         }
-    | _LPAREN num_exp _RPAREN ar_op _LPAREN num_exp _RPAREN
+    | helper_exp exp
         {
-            // ...
-            printf("add t2, x0, t1\n"); // WRITE TO BOTH t1 AND t2 JUST FOR THIS REASON
+            printf("add t2, x0, t1\n");
+            printf("add t1, x0, t3\n");
+            switch($2[1]){
+                case 0:
+                    printf("addi t2, x0, %d\n", atoi(get_name(&head, $2[0])));
+                    break;
+                case 1:
+                    printf("lw t2, %d, x0\n", 4*$2[0]);
+                    break;
+                case 2:
+                    /* DEAL WITH FUNCTION RETURN */
+                    break;
+            }
+            switch($1){
+                case PLUS:
+                    printf("add t1, t1, t2\n");
+                    break;
+                case MINUS:
+                    printf("sub t1, t1, t2\n");
+                    break;
+                case STAR:
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+                    break;
+                case DIV:
+                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
+                    break;
+                case MOD:
+                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
+                    break;
+                case SR:
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("srl t1, t1, t2\n");
+                    break;
+                case SL:
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("sll t1, t1, t2\n");
+                    break;
+                case AMP:
+                    printf("and t1, t1, t2\n");
+                    break;
+                case BOR:
+                    printf("or t1, t1, t2\n");
+                    break;
+                case BXOR:
+                    printf("xor t1, t1, t2\n");
+                    break;
+                default:
+                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
+                    break;
+            }
+        }
+    | helper_exp _LPAREN num_exp _RPAREN
+        {
+            printf("add t2, x0, t1\n");
+            printf("add t1, x0, t3\n");
+            switch($1){
+                case PLUS:
+                    printf("add t1, t1, t2\n");
+                    break;
+                case MINUS:
+                    printf("sub t1, t1, t2\n");
+                    break;
+                case STAR:
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+                    break;
+                case DIV:
+                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
+                    break;
+                case MOD:
+                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
+                    printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
+                    break;
+                case SR:
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("srl t1, t1, t2\n");
+                    break;
+                case SL:
+                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
+                    printf("sll t1, t1, t2\n");
+                    break;
+                case AMP:
+                    printf("and t1, t1, t2\n");
+                    break;
+                case BOR:
+                    printf("or t1, t1, t2\n");
+                    break;
+                case BXOR:
+                    printf("xor t1, t1, t2\n");
+                    break;
+                default:
+                    printf("ERROR: NUM EXPR ISSUE: wrong operator\n");
+                    break;
+            }
         }
     | _PLUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
@@ -582,7 +718,6 @@ num_exp
                     /* DEAL WITH FUNCTION RETURN */
                     break;
             }
-            printf("add t2, x0, t1\n");
         }
     | _MINUS exp /* ONLY FOR +- IN CASE OF -5 */
         {
@@ -598,33 +733,39 @@ num_exp
                     break;
             }
             printf("sub t1, x0, t1\n");
-            printf("add t2, x0, t1\n");
         }
     | data _ITER
         {
             printf("lw t1, %d, x0\n", 4*$1);
-            printf("add t2, x0, t1\n");
             if($2 == INC){
-                printf("addi t3, t1, 1\n");
+                printf("addi t2, t1, 1\n");
             }
             else{
-                printf("addi t3, x0, 1\n");
-                printf("sub t0, t1, t3\n");
+                printf("addi t2, x0, 1\n"); //NO SUBI ...
+                printf("sub t0, t1, t2\n");
             }
             printf("sw t0, %d, x0\n", 4*$1);
         }
     | _ITER data
         {
-            printf("lw t1, %d, x0\n", 4*$1);
-            if($2 == INC){
+            printf("lw t1, %d, x0\n", 4*$2);
+            if($1 == INC){
                 printf("addi t1, t1, 1\n");
             }
             else{
                 printf("addi t2, x0, 1\n");
                 printf("sub t1, t1, t2\n");
             }
-            printf("add t2, x0, t1\n");
-            printf("sw t0, %d, x0\n", 4*$1);
+            printf("sw t0, %d, x0\n", 4*$2);
+        }
+    ;
+/* HELPER */
+/* copy t1 into t3, which will go to t2 when there are two num_exp*/
+helper_exp
+    : _LPAREN num_exp _RPAREN ar_op
+        {
+            printf("add t3, x0, t1\n");
+            $$ = $4;
         }
     ;
 /* ALLOWED PARTS OF num_exp */
@@ -632,11 +773,8 @@ num_exp
 exp
     : literal
         {
-            /*!!! atoi() !!!*/
-            //$$[0] = $1;
-            printf("addi t1, x0, %d\n", atoi(get_name(&head, $1)));
-            //$$[1] = 0;
-            printf("addi t1, x0, 0\n");
+            $$[0] = $1;
+            $$[1] = 0;
         }
     | data
         {
@@ -693,35 +831,38 @@ argument
 /* IF STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */ /* SEE HOW TO NOT MAKE THE CHANGES WHEN NOT ALLOWED */
 if_statement
-    : _IF _LPAREN condition _RPAREN
+    : helper_if %prec ONLY_IF
         {
-            printf("beq t1, x0, LABEL1\n");
+            printf("l%db:\n", lab_cnt++);
         }
-        statement _ELSE
+    |  helper_if _ELSE statement
         {
-            //IF
-            printf("jal t2, EXIT\n");
-            printf("LABEL1:\n");
-        }
-        statement
-        {
-            //ELSE
-            printf("EXIT:\n");
-            
+            printf("l%db:\n", lab_cnt++);
         }
     ;
-/* CONDITION WHEN BRANCHING */
-/* TO BE DELT WITH -- PRINT ASSEMBLY CODE 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
+/* HELPER */
+/* AS BEFORE */
+helper_if
+    : _IF _LPAREN condition _RPAREN {printf("beq t1, x0, l%da\n", lab_cnt);} statement
+        {
+            printf("beq x0, x0, l%db\n", lab_cnt); //always branch -- skip else after if is done
+            printf("l%da:\n", lab_cnt);
+        }
+    ;
+/* IF CONDTITIONS */
 condition
     : rel_exp
+    | cond_cplx
+    ;
+
+cond_cplx
+    : helper_cond_simp rel_exp
         {
-            // empty
-        }
-    | _LPAREN condition _RPAREN log_op _LPAREN condition _RPAREN
-        {
-            switch($4){
+            printf("addi t2, t1, x0\n");
+            printf("addi t1, t3, x0\n");
+            switch($1){
                 case(AND):
-                    printf("add t1, t1, t2\n");
+                    printf("and t1, t1, t2\n");
                     break;
                 case(OR):
                     printf("or t1, t1, t2\n");
@@ -731,11 +872,13 @@ condition
                     break;
             }
         }
-    | rel_exp log_op rel_exp
+    | helper_cond_simp _LPAREN cond_cplx _RPAREN
         {
-            switch($2){
+            printf("addi t2, t1, x0\n");
+            printf("addi t1, t3, x0\n");
+            switch($1){
                 case(AND):
-                    printf("add t1, t1, t2\n");
+                    printf("and t1, t1, t2\n");
                     break;
                 case(OR):
                     printf("or t1, t1, t2\n");
@@ -744,62 +887,101 @@ condition
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
                     break;
             }
+        }
+    | helper_cond rel_exp
+        {
+            printf("addi t2, t1, x0\n");
+            printf("addi t1, t3, x0\n");
+            switch($1){
+                case(AND):
+                    printf("and t1, t1, t2\n");
+                    break;
+                case(OR):
+                    printf("or t1, t1, t2\n");
+                    break;
+               default:
+                    printf("ERROR: COND ISSUE: wrong logical operator\n");
+                    break;
+            }
+        }
+    | helper_cond _LPAREN cond_cplx _RPAREN
+        {
+            printf("addi t2, t1, x0\n");
+            printf("addi t1, t3, x0\n");
+            switch($1){
+                case(AND):
+                    printf("and t1, t1, t2\n");
+                    break;
+                case(OR):
+                    printf("or t1, t1, t2\n");
+                    break;
+               default:
+                    printf("ERROR: COND ISSUE: wrong logical operator\n");
+                    break;
+            }
+        }
+    ;
+/* HELPER */
+/* AS BEFORE */
+helper_cond_simp
+    : rel_exp log_op
+        {
+            printf("addi t3, t1, x0\n");
+            $$ = $2;
+        } 
+    ;
+/* HELPER */
+/* AS BEFORE */
+helper_cond
+    : _LPAREN cond_cplx _RPAREN log_op
+        {
+            printf("addi t3, t1, x0\n");
+            $$ = $4;
         }
     ;
 /* REALATIONAL EXPRESSION */
 /* TO BE DELT WITH -- PRINT ASSEMBLY CODE 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 rel_exp
-    : num_exp _RELOP num_exp
+    : num_exp _RELOP {printf("add t4, x0, t1\n");} num_exp
         {
-            /*
-            a <= b
-            a == b || a < b
-            slt y, a, b
-            seq z, a, b
-            or x, y, z
-
-
-            a != b
-            slt y, a, b
-            slt z, b, a
-            or x, y, z
-
-
-            a == b
-            slt y, a, b
-            slt z, b, a
-            or x, y, z
-            xor x, x, 1
-
-            */
+            printf("add t2, x0, t1\n");
+            printf("add t1, x0, t4\n");
             switch($2){
                 case(LT):
                     printf("slt t1, t1, t2\n");
                     break;
                 case(LEQ):
-                    printf("xor t1,t1,t2\n");
-                    printf("bne t1,0,EXIT\n");
-                    printf("slt t1,t1,t2\n");
-                    printf("EXIT:\n");
+                    printf("slt t3, t1, t2\n");
+                    printf("slt t2, t2, t1\n");
+                    printf("add t1, t2, t3\n");
+                    printf("addi t2, x0, 1\n");
+                    printf("sub t1, t2, t1\n"); // 1 - (t1 != t2)
+
+                    printf("add t1, t1, t3\n"); // == + <
                     break;
                 case(GT):
                     printf("slt t1, t2, t1\n");
                     break;
                 case(GEQ):
-                    printf("xor t1,t1,t2\n");
-                    printf("bne t1,0,EXIT\n");
-                    printf("slt t1,t2,t1\n");
-                    printf("EXIT:\n");
+                    printf("slt t3, t2, t1\n");
+                    printf("slt t2, t1, t2\n");
+                    printf("add t1, t2, t3\n");
+                    printf("addi t2, x0, 1\n");
+                    printf("sub t1, t2, t1\n"); // 1 - (t1 != t2)
+
+                    printf("add t1, t1, t3\n"); // == + >
                     break;
-		case(EQ):
-	            printf("xor t1,t1,t2\n");
-                    printf("bne t1,0,EXIT\n");
-                    printf("EXIT:\n");
+		        case(EQ):
+                    printf("slt t3, t1, t2\n");
+                    printf("slt t2, t2, t1\n");
+                    printf("add t1, t2, t3\n");
+                    printf("addi t2, x0, 1\n");
+                    printf("sub t1, t2, t1\n"); // 1 - (t1 != t2)
                     break;
                 case(NEQ):
-                    printf("xor t1,t1,t2\n");
-                    printf("bne t1,1,EXIT\n");
-                    printf("EXIT:\n");
+                    printf("slt t3, t1, t2\n");
+                    printf("slt t2, t2, t1\n");
+                    printf("add t1, t2, t3\n");
                     break;
                 default:
                     printf("ERROR: REL OP ISSUE: wrong operator\n");
