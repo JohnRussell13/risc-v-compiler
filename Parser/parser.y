@@ -485,9 +485,9 @@ num_exp
                     break;
             }
             printf("add t2, x0, t1\n");
-            printf("add t3, x0, %d", 4*num_exp_cnt);
+            printf("add t3, x0, %d\n", 4*num_exp_cnt);
             num_exp_cnt++;
-            printf("sw t1, t3, 0");
+            printf("sw t1, t3, 0\n");
         }
     | exp ar_op exp
         {
@@ -695,18 +695,18 @@ argument
 if_statement
     : _IF _LPAREN condition _RPAREN
         {
-            printf("beq t1, x0, LABEL1");
+            printf("beq t1, x0, LABEL1\n");
         }
         statement _ELSE
         {
             //IF
-            printf("jal t2, EXIT");
-            printf("LABEL1:");
+            printf("jal t2, EXIT\n");
+            printf("LABEL1:\n");
         }
         statement
         {
             //ELSE
-            printf("EXIT:");
+            printf("EXIT:\n");
             
         }
     ;
@@ -721,10 +721,10 @@ condition
         {
             switch($4){
                 case(AND):
-                    printf("add t1, t1, t2");
+                    printf("add t1, t1, t2\n");
                     break;
                 case(OR):
-                    printf("or t1, t1, t2");
+                    printf("or t1, t1, t2\n");
                     break;
                default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
@@ -735,10 +735,10 @@ condition
         {
             switch($2){
                 case(AND):
-                    printf("add t1, t1, t2");
+                    printf("add t1, t1, t2\n");
                     break;
                 case(OR):
-                    printf("or t1, t1, t2");
+                    printf("or t1, t1, t2\n");
                     break;
                default:
                     printf("ERROR: COND ISSUE: wrong logical operator\n");
@@ -774,32 +774,32 @@ rel_exp
             */
             switch($2){
                 case(LT):
-                    printf("slt t1, t1, t2");
+                    printf("slt t1, t1, t2\n");
                     break;
                 case(LEQ):
-                    printf("xor t1,t1,t2");
-                    printf("bne t1,0,EXIT");
-                    printf("slt t1,t1,t2");
-                    printf("EXIT:");
+                    printf("xor t1,t1,t2\n");
+                    printf("bne t1,0,EXIT\n");
+                    printf("slt t1,t1,t2\n");
+                    printf("EXIT:\n");
                     break;
                 case(GT):
-                    printf("slt t1, t2, t1");
+                    printf("slt t1, t2, t1\n");
                     break;
                 case(GEQ):
-                    printf("xor t1,t1,t2");
-                    printf("bne t1,0,EXIT");
-                    printf("slt t1,t2,t1");
-                    printf("EXIT:");
+                    printf("xor t1,t1,t2\n");
+                    printf("bne t1,0,EXIT\n");
+                    printf("slt t1,t2,t1\n");
+                    printf("EXIT:\n");
                     break;
 		case(EQ):
-	            printf("xor t1,t1,t2");
-                    printf("bne t1,0,EXIT");
-                    printf("EXIT:");
+	            printf("xor t1,t1,t2\n");
+                    printf("bne t1,0,EXIT\n");
+                    printf("EXIT:\n");
                     break;
                 case(NEQ):
-                    printf("xor t1,t1,t2");
-                    printf("bne t1,1,EXIT");
-                    printf("EXIT:");
+                    printf("xor t1,t1,t2\n");
+                    printf("bne t1,1,EXIT\n");
+                    printf("EXIT:\n");
                     break;
                 default:
                     printf("ERROR: REL OP ISSUE: wrong operator\n");
