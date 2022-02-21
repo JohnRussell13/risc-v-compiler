@@ -318,13 +318,14 @@ statement
     | if_statement
     | return_statement
     | while_statement
-    | do_while_statement
     | for_statement
     | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
     | _CONTINUE _SEMICOLON
     | _BREAK _SEMICOLON
-    | switch_statement
     ;
+//    | do_while_statement
+//    | switch_statement
+
 /* COMPOUND STATMENT -- {} BLOCK */
 /* NO ACTION */
 compound_statement
@@ -829,7 +830,7 @@ argument
     | num_exp
     ;
 /* IF STATEMENT */
-/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */ /* SEE HOW TO NOT MAKE THE CHANGES WHEN NOT ALLOWED */
+/* PRINT ALL jmps */
 if_statement
     : helper_if %prec ONLY_IF
         {
@@ -940,7 +941,7 @@ helper_cond
         }
     ;
 /* REALATIONAL EXPRESSION */
-/* TO BE DELT WITH -- PRINT ASSEMBLY CODE 1 OR 0 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
+/* PRINT ASSEMBLY CODE 1 OR 0 IN t1 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 rel_exp
     : num_exp _RELOP {printf("add t4, x0, t1\n");} num_exp
         {
@@ -1019,50 +1020,62 @@ return_statement
 /* WHILE STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 while_statement
-    : _WHILE _LPAREN condition _RPAREN statement
+    : _WHILE {printf("l%dw:\n", lab_cnt);} _LPAREN condition _RPAREN {printf("beq t1, x0, l%dw\n", lab_cnt+1);}  statement
         {
-            /* LIKE IF */
+            printf("beq x0, x0, l%dw\n", lab_cnt);
+            printf("l%dw:\n", lab_cnt+1);
         }
     ;
 /* SWITCH STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
+/*
 switch_statement
     : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
         {
-            /* LIKE IF */
         }
     ;
+*/
 /* LIST OF CASES */
 /* TO BE DELT WITH */
+/*
 case_list
     : case_list case_statement
     | case_statement
     ;
+*/
 /* CASE STATEMENT */
 /* TO BE DELT WITH */ /* ALLOW ONLY ONE default */
+/*
 case_statement
     : _CASE num_exp _COLON case_block
     | _DEFAULT _COLON case_block
     ;
+*/
 /* LIST OF ALLOWED STATEMENTS INSIDE A CASE BLOCK */
 /* TO BE DELT WITH */
+/*
 case_block
     : case_block case_state
     | case_state
     ;
+*/
 /* ALLOWED STATEMENTS INSIDE A CASE BLOCK */
 /* TO BE DELT WITH */
+/*
 case_state
     : assignment_statement
-    | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
+    | function_call _SEMICOLON // FOR VOID FUNCTIONS
     | _CONTINUE _SEMICOLON
     | _BREAK _SEMICOLON
     ;
+*/
 /* DO WHILE STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
+/*
 do_while_statement
     : _DO statement _WHILE _LPAREN condition _RPAREN _SEMICOLON
     ;
+*/
 /* FOR STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
 for_statement

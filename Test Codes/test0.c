@@ -7,26 +7,33 @@
 
 int main(){
     int x;
-    int y;
-    y = 7;
-    /*int z0;
-    int w;
-    int q;
-    int t;
+    // int y;
+    // int z0;
+    // int w;
+    // int q;
+    // int t;
+    // y = 7;
 
 
-    x = 0x1;
-    y = 3;
-    add(x,y);
-    z0 = x + y;
-    w = x - z0;
-    q = x << y;
-    t = z0 >> 1;
-*/
-    x = 5;
-    if(x<y){
-        x=6;
+    // x = 0x1;
+    // y = (2 + 3) << (1 - 4);
+    // z0 = x + y;
+    // w = x - z0;
+    // q = x << y;
+    // t = z0 >> 1;
+
+    // x = 5;
+    // y = 7;
+    // if(x<y){
+    //     x=6;
+    // }
+
+    x = 0;
+    while(x < 2){
+        x++;
     }
+
+    x = 5;
 
     //return 0;
 }
