@@ -1023,7 +1023,7 @@ while_statement
     : _WHILE {printf("l%dw:\n", lab_cnt);} _LPAREN condition _RPAREN {printf("beq t1, x0, l%dw\n", lab_cnt+1);}  statement
         {
             printf("beq x0, x0, l%dw\n", lab_cnt);
-            printf("l%dw:\n", lab_cnt+1);
+            printf("l%dw:\n", ++lab_cnt);
         }
     ;
 /* SWITCH STATEMENT */
@@ -1078,20 +1078,111 @@ do_while_statement
 */
 /* FOR STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
-for_statement
-    : _FOR for_args statement
+/* for_statement
+    : _FOR _LPAREN assignment_statement {
+        printf("l%df:\n", lab_cnt);
+    } condition {
+        printf("beq t1, x0, l%df\n", lab_cnt+1);
+    } _SEMICOLON change_statement _RPAREN statement {
+        printf("beq x0 x0, l%df\n", lab_cnt);
+        printf("l%df:\n", ++lab_cnt);
+    }
+    ; */
+for_start
+    : _FOR _LPAREN assignment_statement {
+        printf("l%df:\n", lab_cnt);
+    } condition {
+        printf("beq t1, x0, l%df\n", lab_cnt+1);
+    } _SEMICOLON
     ;
-/* ARGUMENTS OF FOR */
-/* TO BE DELT WITH */
-for_args
-    : _LPAREN assignment_statement condition _SEMICOLON change_statement _RPAREN
+
+for_statement 
+    : for_start data _ASSIGN num_exp _RPAREN statement
+        {
+            printf("lw t0, %d, x0\n", 4*$2);
+            printf("add t0, x0, t1\n"); // PUT num_exp ON t1
+            printf("sw t0, %d, x0\n", 4*$2); // 4*$1 IS A SIMPLE MAP: SYM_TAB -> DATA MEMORY
+
+            printf("beq x0 x0, l%df\n", lab_cnt);
+            printf("l%df:\n", ++lab_cnt);
+        }
+    | for_start data _ASSIGN _AMP data _RPAREN statement
+        {
+            printf("lw t0, %d, x0\n", 4*$2);
+            printf("addi t0, x0, %d\n", 4*$2);
+            printf("sw t0, %d, x0\n", 4*$2);
+
+            printf("beq x0 x0, l%df\n", lab_cnt);
+            printf("l%df:\n", ++lab_cnt);
+        }
+    | for_start data _ITER _RPAREN statement
+        {
+            printf("lw t0, %d, x0\n", 4*$2);
+            if($3 == INC){
+                printf("addi t0, t0, 1\n");
+            }
+            else{
+                printf("addi t1, x0, 1\n");
+                printf("sub t0, t0, t1\n");
+            }
+            printf("sw t0, %d, x0\n", 4*$2);
+
+            printf("beq x0 x0, l%df\n", lab_cnt);
+            printf("l%df:\n", ++lab_cnt);
+        }
+    | for_start _ITER data _RPAREN statement
+        {
+            printf("lw t0, %d, x0\n", 4*$2);
+            if($2 == INC){
+                printf("addi t0, t0, 1\n");
+            }
+            else{
+                printf("addi t1, x0, 1\n");
+                printf("sub t0, t0, t1\n");
+            }
+            printf("sw t0, %d, x0\n", 4*$3);
+
+            printf("beq x0 x0, l%df\n", lab_cnt);
+            printf("l%df:\n", ++lab_cnt);
+        }
     ;
+
 /* SIMPLE ASSIGN STATEMENTS */
 /* TO BE DELT WITH */
-change_statement
-    : possible_pointer _ASSIGN num_exp
-    | possible_pointer _ITER
-    ;
+/* change_statement
+    : data _ASSIGN num_exp
+        {
+            printf("add t0, x0, t1\n"); // PUT num_exp ON t1
+            printf("sw t0, %d, x0\n", 4*$1); // 4*$1 IS A SIMPLE MAP: SYM_TAB -> DATA MEMORY
+        }
+    | data _ASSIGN _AMP data
+        {
+            printf("addi t0, x0, %d\n", 4*$1);
+            printf("sw t0, %d, x0\n", 4*$1);
+        }
+    | data _ITER
+        {
+            if($2 == INC){
+                printf("addi t0, t0, 1\n");
+            }
+            else{
+                printf("addi t1, x0, 1\n");
+                printf("sub t0, t0, t1\n");
+            }
+            printf("sw t0, %d, x0\n", 4*$1);
+        }
+    | _ITER data
+        {
+            if($1 == INC){
+                printf("addi t0, t0, 1\n");
+            }
+            else{
+                printf("addi t1, x0, 1\n");
+                printf("sub t0, t0, t1\n");
+            }
+            printf("sw t0, %d, x0\n", 4*$2);
+        }
+    ; */
 /* TO BE ADDED */
 /*
 ++ a+b*c

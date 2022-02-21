@@ -7,7 +7,7 @@
 
 int main(){
     int x;
-    // int y;
+    int y;
     // int z0;
     // int w;
     // int q;
@@ -28,12 +28,19 @@ int main(){
     //     x=6;
     // }
 
+    // x = 0;
+    // while(x < 2){
+    //     x++;
+    // }
+
+    // x = 5;
+
     x = 0;
-    while(x < 2){
+    for(y = 0; y < 5; y++){
         x++;
     }
-
-    x = 5;
+    
+    y++;
 
     //return 0;
 }
