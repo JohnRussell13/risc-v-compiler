@@ -320,9 +320,9 @@ statement
     | while_statement
     | for_statement
     | function_call _SEMICOLON /* FOR VOID FUNCTIONS */
-    | _CONTINUE _SEMICOLON
-    | _BREAK _SEMICOLON
     ;
+//    | _CONTINUE _SEMICOLON
+//    | _BREAK _SEMICOLON    
 //    | do_while_statement
 //    | switch_statement
 
@@ -522,6 +522,30 @@ num_exp
                     break;
                 case STAR:
                     printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+
+                    // should use MUL and DIV which are in RISC-V
+
+                    // addi t1, x0, 3
+                    // addi t2, x0, -1
+                    // addi t3, x0, 0
+
+                    // blt t2, x0, lab2
+
+                    // lab:
+                    // beq t2, x0, lab1
+                    // addi t2, t2, -1
+                    // add t3, t3, t1
+                    // beq x0, x0, lab
+
+                    // lab2:
+                    // beq t2, x0, lab1
+                    // addi t2, t2, 1
+                    // sub t3, t3, t1
+                    // beq x0, x0, lab2
+
+                    // lab1:
+                    // sw t3, 4, x0
+
                     break;
                 case DIV:
                     //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
