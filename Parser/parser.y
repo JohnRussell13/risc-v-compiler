@@ -686,7 +686,30 @@ num_exp
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
-                    printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
+                    printf("beq t2, x0, end\n"); //error
+
+                    printf("addi t4, x0, -1\n");
+                    printf("bge t1, x0, l%dd1\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd1:\n", lab_cnt);
+                    printf("bge t2, x0, l%dd2\n", lab_cnt);
+                    printf("sub t2, x0, t2\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd2:\n", lab_cnt);
+                    printf("addi t3, x0, 0\n");
+                    printf("l%dd3:\n", lab_cnt);
+                    printf("sub t1, t1, t2\n");
+                    printf("blt t1, x0, l%dd4\n", lab_cnt);
+                    printf("add t3, t1, x0\n");
+                    printf("beq x0, x0, l%dd3\n", lab_cnt);
+                    printf("l%dd4:\n", lab_cnt);
+                    printf("add t1, t3, x0\n");
+                    printf("bne t4, x0, l%dd5\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("l%dd5:\n", lab_cnt++);
+                    printf("add t0, x0, t1\n");
+                    printf("sw t0, 4, x0\n");
                     break;
                 case SR:
                     //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
@@ -779,7 +802,30 @@ num_exp
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
-                    printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
+                    printf("beq t2, x0, end\n"); //error
+
+                    printf("addi t4, x0, -1\n");
+                    printf("bge t1, x0, l%dd1\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd1:\n", lab_cnt);
+                    printf("bge t2, x0, l%dd2\n", lab_cnt);
+                    printf("sub t2, x0, t2\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd2:\n", lab_cnt);
+                    printf("addi t3, x0, 0\n");
+                    printf("l%dd3:\n", lab_cnt);
+                    printf("sub t1, t1, t2\n");
+                    printf("blt t1, x0, l%dd4\n", lab_cnt);
+                    printf("add t3, t1, x0\n");
+                    printf("beq x0, x0, l%dd3\n", lab_cnt);
+                    printf("l%dd4:\n", lab_cnt);
+                    printf("add t1, t3, x0\n");
+                    printf("bne t4, x0, l%dd5\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("l%dd5:\n", lab_cnt++);
+                    printf("add t0, x0, t1\n");
+                    printf("sw t0, 4, x0\n");
                     break;
                 case SR:
                     //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
@@ -861,7 +907,30 @@ num_exp
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
-                    printf("add t1, t1, t2\n"); //IMPLEMENT MODULAR
+                    printf("beq t2, x0, end\n"); //error
+
+                    printf("addi t4, x0, -1\n");
+                    printf("bge t1, x0, l%dd1\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd1:\n", lab_cnt);
+                    printf("bge t2, x0, l%dd2\n", lab_cnt);
+                    printf("sub t2, x0, t2\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd2:\n", lab_cnt);
+                    printf("addi t3, x0, 0\n");
+                    printf("l%dd3:\n", lab_cnt);
+                    printf("sub t1, t1, t2\n");
+                    printf("blt t1, x0, l%dd4\n", lab_cnt);
+                    printf("add t3, t1, x0\n");
+                    printf("beq x0, x0, l%dd3\n", lab_cnt);
+                    printf("l%dd4:\n", lab_cnt);
+                    printf("add t1, t3, x0\n");
+                    printf("bne t4, x0, l%dd5\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("l%dd5:\n", lab_cnt++);
+                    printf("add t0, x0, t1\n");
+                    printf("sw t0, 4, x0\n");
                     break;
                 case SR:
                     //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
