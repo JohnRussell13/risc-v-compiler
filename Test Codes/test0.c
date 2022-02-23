@@ -42,9 +42,9 @@ int main(){
     
     // y++;
 
-    x = 12;
+    x = -13;
     y = 3;
-    x = x/y;
+    x = x%y;
 
     //return 0;
 }
