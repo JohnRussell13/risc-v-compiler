@@ -111,6 +111,9 @@
 /* INIT SYM_TAB */
 program
     : function_list
+        {
+            printf("end: nop\n");
+        }
     ;
 /* LIST OF FUNCTIONS -- RECURSIVE RULE */
 /* NO ACTION */
@@ -524,25 +527,47 @@ num_exp
                     // should use MUL and DIV which are in RISC-V
 
                     printf("addi t3, x0, 0\n");
-                    printf("blt t2, x0, l%dm\n", lab_cnt+2);
+                    printf("blt t2, x0, l%dm2\n", lab_cnt);
                     printf("l%dm:\n", lab_cnt);
-                    printf("beq t2, x0, l%dm\n", lab_cnt+1);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
                     printf("addi t2, t2, -1\n");
                     printf("add t3, t3, t1\n");
                     printf("beq x0, x0, l%dm\n", lab_cnt);
-                    printf("l%dm:\n", lab_cnt+2);
-                    printf("beq t2, x0, l%dm\n", lab_cnt+1);
+                    printf("l%dm2:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
                     printf("addi t2, t2, 1\n");
                     printf("sub t3, t3, t1\n");
-                    printf("beq x0, x0, l%dm\n", lab_cnt+2);
-                    printf("l%dm:\n", lab_cnt+1);
+                    printf("beq x0, x0, l%dm2\n", lab_cnt);
+                    printf("l%dm1:\n", lab_cnt++);
                     printf("add t1, t3, x0\n");
-                    lab_cnt += 3;
 
                     break;
                 case DIV:
                     //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
+                    printf("beq t2, x0, end\n"); //error
+
+                    printf("addi t4, x0, -1\n");
+                    printf("bge t1, x0, l%dd1\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd1:\n", lab_cnt);
+                    printf("bge t2, x0, l%dd2\n", lab_cnt);
+                    printf("sub t2, x0, t2\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd2:\n", lab_cnt);
+                    printf("addi t3, x0, 0\n");
+                    printf("l%dd3:\n", lab_cnt);
+                    printf("sub t1, t1, t2\n");
+                    printf("blt t1, x0, l%dd4\n", lab_cnt);
+                    printf("addi t3, t3, 1\n");
+                    printf("beq x0, x0, l%dd3\n", lab_cnt);
+                    printf("l%dd4:\n", lab_cnt);
+                    printf("add t1, t3, x0\n");
+                    printf("bne t4, x0, l%dd5\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("l%dd5:\n", lab_cnt++);
+                    printf("add t0, x0, t1\n");
+                    printf("sw t0, 4, x0\n");
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
@@ -592,11 +617,49 @@ num_exp
                     printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+                    //printf("mul t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+
+                    printf("addi t3, x0, 0\n");
+                    printf("blt t2, x0, l%dm2\n", lab_cnt);
+                    printf("l%dm:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
+                    printf("addi t2, t2, -1\n");
+                    printf("add t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm\n", lab_cnt);
+                    printf("l%dm2:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
+                    printf("addi t2, t2, 1\n");
+                    printf("sub t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm2\n", lab_cnt);
+                    printf("l%dm1:\n", lab_cnt++);
+                    printf("add t1, t3, x0\n");
                     break;
                 case DIV:
                     //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
+                    printf("beq t2, x0, end\n"); //error
+
+                    printf("addi t4, x0, -1\n");
+                    printf("bge t1, x0, l%dd1\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd1:\n", lab_cnt);
+                    printf("bge t2, x0, l%dd2\n", lab_cnt);
+                    printf("sub t2, x0, t2\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd2:\n", lab_cnt);
+                    printf("addi t3, x0, 0\n");
+                    printf("l%dd3:\n", lab_cnt);
+                    printf("sub t1, t1, t2\n");
+                    printf("blt t1, x0, l%dd4\n", lab_cnt);
+                    printf("addi t3, t3, 1\n");
+                    printf("beq x0, x0, l%dd3\n", lab_cnt);
+                    printf("l%dd4:\n", lab_cnt);
+                    printf("add t1, t3, x0\n");
+                    printf("bne t4, x0, l%dd5\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("l%dd5:\n", lab_cnt++);
+                    printf("add t0, x0, t1\n");
+                    printf("sw t0, 4, x0\n"); 
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
@@ -647,11 +710,49 @@ num_exp
                     printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+                    //printf("mul t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+
+                    printf("addi t3, x0, 0\n");
+                    printf("blt t2, x0, l%dm2\n", lab_cnt);
+                    printf("l%dm:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
+                    printf("addi t2, t2, -1\n");
+                    printf("add t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm\n", lab_cnt);
+                    printf("l%dm2:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
+                    printf("addi t2, t2, 1\n");
+                    printf("sub t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm2\n", lab_cnt);
+                    printf("l%dm1:\n", lab_cnt++);
+                    printf("add t1, t3, x0\n");
                     break;
                 case DIV:
                     //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
+                    printf("beq t2, x0, end\n"); //error
+
+                    printf("addi t4, x0, -1\n");
+                    printf("bge t1, x0, l%dd1\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd1:\n", lab_cnt);
+                    printf("bge t2, x0, l%dd2\n", lab_cnt);
+                    printf("sub t2, x0, t2\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd2:\n", lab_cnt);
+                    printf("addi t3, x0, 0\n");
+                    printf("l%dd3:\n", lab_cnt);
+                    printf("sub t1, t1, t2\n");
+                    printf("blt t1, x0, l%dd4\n", lab_cnt);
+                    printf("addi t3, t3, 1\n");
+                    printf("beq x0, x0, l%dd3\n", lab_cnt);
+                    printf("l%dd4:\n", lab_cnt);
+                    printf("add t1, t3, x0\n");
+                    printf("bne t4, x0, l%dd5\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("l%dd5:\n", lab_cnt++);
+                    printf("add t0, x0, t1\n");
+                    printf("sw t0, 4, x0\n");
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
@@ -691,11 +792,49 @@ num_exp
                     printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+                    //printf("mul t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
+
+                    printf("addi t3, x0, 0\n");
+                    printf("blt t2, x0, l%dm2\n", lab_cnt);
+                    printf("l%dm:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
+                    printf("addi t2, t2, -1\n");
+                    printf("add t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm\n", lab_cnt);
+                    printf("l%dm2:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm1\n", lab_cnt);
+                    printf("addi t2, t2, 1\n");
+                    printf("sub t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm2\n", lab_cnt);
+                    printf("l%dm1:\n", lab_cnt++);
+                    printf("add t1, t3, x0\n");
                     break;
                 case DIV:
                     //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
-                    printf("add t1, t1, t2\n"); //IMPLEMENT DIVISION
+                    printf("beq t2, x0, end\n"); //error
+
+                    printf("addi t4, x0, -1\n");
+                    printf("bge t1, x0, l%dd1\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd1:\n", lab_cnt);
+                    printf("bge t2, x0, l%dd2\n", lab_cnt);
+                    printf("sub t2, x0, t2\n");
+                    printf("addi t4, t4, 1\n");
+                    printf("l%dd2:\n", lab_cnt);
+                    printf("addi t3, x0, 0\n");
+                    printf("l%dd3:\n", lab_cnt);
+                    printf("sub t1, t1, t2\n");
+                    printf("blt t1, x0, l%dd4\n", lab_cnt);
+                    printf("addi t3, t3, 1\n");
+                    printf("beq x0, x0, l%dd3\n", lab_cnt);
+                    printf("l%dd4:\n", lab_cnt);
+                    printf("add t1, t3, x0\n");
+                    printf("bne t4, x0, l%dd5\n", lab_cnt);
+                    printf("sub t1, x0, t1\n");
+                    printf("l%dd5:\n", lab_cnt++);
+                    printf("add t0, x0, t1\n");
+                    printf("sw t0, 4, x0\n");
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
