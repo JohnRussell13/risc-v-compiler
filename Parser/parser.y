@@ -521,30 +521,23 @@ num_exp
                     printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    printf("add t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
-
                     // should use MUL and DIV which are in RISC-V
 
-                    // addi t1, x0, 3
-                    // addi t2, x0, -1
-                    // addi t3, x0, 0
-
-                    // blt t2, x0, lab2
-
-                    // lab:
-                    // beq t2, x0, lab1
-                    // addi t2, t2, -1
-                    // add t3, t3, t1
-                    // beq x0, x0, lab
-
-                    // lab2:
-                    // beq t2, x0, lab1
-                    // addi t2, t2, 1
-                    // sub t3, t3, t1
-                    // beq x0, x0, lab2
-
-                    // lab1:
-                    // sw t3, 4, x0
+                    printf("addi t3, x0, 0\n");
+                    printf("blt t2, x0, l%dm\n", lab_cnt+2);
+                    printf("l%dm:\n", lab_cnt);
+                    printf("beq t2, x0, l%dm\n", lab_cnt+1);
+                    printf("addi t2, t2, -1\n");
+                    printf("add t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm\n", lab_cnt);
+                    printf("l%dm:\n", lab_cnt+2);
+                    printf("beq t2, x0, l%dm\n", lab_cnt+1);
+                    printf("addi t2, t2, 1\n");
+                    printf("sub t3, t3, t1\n");
+                    printf("beq x0, x0, l%dm\n", lab_cnt+2);
+                    printf("l%dm:\n", lab_cnt+1);
+                    printf("add t1, t3, x0\n");
+                    lab_cnt += 3;
 
                     break;
                 case DIV:

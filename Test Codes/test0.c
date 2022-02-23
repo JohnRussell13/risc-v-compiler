@@ -42,8 +42,8 @@ int main(){
     
     // y++;
 
-    x = 3;
-    y = 7;
+    x = 0;
+    y = 16;
     x = x*y;
 
     //return 0;
