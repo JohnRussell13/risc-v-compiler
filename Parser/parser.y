@@ -12,6 +12,8 @@
     int warning_count;
     int num_exp_cnt = 0; // not in use now, but needed to make deep nested expresions possible; also needed for rel
     int lab_cnt = 0;
+    int func_ind = 0;
+    int args = 1;
 
     /* SYM_TAB HELPER VARIABLES */
     char tab_name[SYMBOL_TABLE_LENGTH];
@@ -112,6 +114,11 @@
 program
     : function_list
         {
+            printf("start:\n");
+            printf("addi gp, x0, %d\n", 4*(1+lookup_function_size(&head, lookup_symbol(&head, "main"))));
+            printf("addi s11, gp, 0\n");
+            printf("addi tp, x0, 0\n");
+            printf("jal main\n");
             printf("end: nop\n");
         }
     ;
@@ -135,11 +142,21 @@ function
             }
 
         }
-        _LPAREN parameter_list _RPAREN body
+        _LPAREN parameter_list _RPAREN 
         {
-            tab_ind = lookup_symbol(&head, $2);
+            printf("%s:\n", $2);
+            printf("sw ra, 0, s11\n");
+        } 
+        body
+        {
+            //tab_ind = lookup_symbol(&head, $2);
+            //tab_ind = get_param(&head);
+            //printf("%d\n", tab_ind);
             //print_symtab(&head);
-            clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
+
+            //clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
+
+            printf("jalr ra\n");
         }
     ;
 /* NUMBER */
@@ -175,29 +192,32 @@ possible_pointer
     : _ID
         {
             strcpy(tab_name, $1);
-            tab_ind = lookup_symbol(&head, tab_name);
-            if(tab_ind == -1){
+            func_ind = get_func(&head);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
                 tab_ind = insert_symbol(&head, tab_name, 0, 0); // JUST SET THE NAME
-                $$[0] = tab_ind;
+                
+                $$[0] = tab_ind - func_ind;
                 $$[1] = 1;
             }
             else{
-                $$[0] = tab_ind;
+                $$[0] = tab_ind - func_ind;
                 $$[1] = 0;
             }
         }
     | _STAR _ID
         {
             strcpy(tab_name, $2);
-            tab_ind = lookup_symbol(&head, tab_name);
+            func_ind = get_func(&head);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
             if(tab_ind == -1){
                 tab_ind = insert_symbol(&head, tab_name, 0, 0);
-                set_pointer(&head, tab_ind);
-                $$[0] = tab_ind;
+                set_pointer(&head, tab_ind + func_ind);
+                $$[0] = tab_ind - func_ind;
                 $$[1] = 1;
             }
             else{
-                $$[0] = tab_ind;
+                $$[0] = tab_ind - func_ind;
                 $$[1] = 0;
             }
         }
@@ -212,10 +232,11 @@ parameter_list
 parameter
     : parameter _COMMA type possible_pointer
         {
+            func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $4[0]));
             if($4[1]){
-                set_type(&head, $4[0], $3);
-                set_kind(&head, $4[0], PAR);
+                set_type(&head, $4[0] + func_ind, $3);
+                set_kind(&head, $4[0] + func_ind, PAR); // PAR or VAR? is PAR needed? yes - PAR can't be changed
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -223,13 +244,14 @@ parameter
         }
     | type possible_pointer
         {
+            func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $2[0]));
             if($1 == VOID){
                 printf("ERROR: PARAM DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
             }
             if($2[1]){
-                set_type(&head, $2[0], $1);
-                set_kind(&head, $2[0], PAR);
+                set_type(&head, $2[0] + func_ind, $1);
+                set_kind(&head, $2[0] + func_ind, PAR);
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -252,13 +274,14 @@ variable_list
 variable
     : type possible_pointer _SEMICOLON
         {
+            func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $2[0]));
             if($1 == VOID){
                 printf("ERROR: VAR DEF ISSUE: variable '%s' can not be of VOID type\n",tab_name);
             }
             if($2[1]){
-                set_type(&head, $2[0], $1);
-                set_kind(&head, $2[0], VAR);
+                set_type(&head, $2[0] + func_ind, $1);
+                set_kind(&head, $2[0] + func_ind, VAR);
             }
             else{
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
@@ -266,10 +289,11 @@ variable
         }
     | type possible_pointer
         {
+            func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $2[0]));
             if($2[1]){
-                set_type(&head, $2[0], $1);
-                set_kind(&head, $2[0], VAR);
+                set_type(&head, $2[0] + func_ind, $1);
+                set_kind(&head, $2[0] + func_ind, VAR);
                 tab_array_count = 0;
             }
             else{
@@ -278,7 +302,8 @@ variable
         }
         array_member_definition _SEMICOLON
             {
-                set_dimension(&head, $2[0], $4, tab_array_count);
+                func_ind = get_func(&head);
+                set_dimension(&head, $2[0] + func_ind, $4, tab_array_count);
             }
     ;
 /* ARRAY PART IN A DECLARATION */
@@ -341,12 +366,12 @@ assignment_statement
     : data _ASSIGN num_exp _SEMICOLON
         {
             printf("add t0, x0, t1\n"); // PUT num_exp ON t1
-            printf("sw t0, %d, x0\n", 4*$1); // 4*$1 IS A SIMPLE MAP: SYM_TAB -> DATA MEMORY
+            printf("sw t0, %d, tp\n", 4*$1); // 4*$1 IS A SIMPLE MAP: SYM_TAB -> DATA MEMORY
         }
     | data _ASSIGN _AMP data _SEMICOLON
         {
             printf("addi t0, x0, %d\n", 4*$1);
-            printf("sw t0, %d, x0\n", 4*$1);
+            printf("sw t0, %d, tp\n", 4*$1);
         }
     | data _ITER _SEMICOLON
         {
@@ -357,7 +382,7 @@ assignment_statement
                 printf("addi t1, x0, 1\n");
                 printf("sub t0, t0, t1\n");
             }
-            printf("sw t0, %d, x0\n", 4*$1);
+            printf("sw t0, %d, tp\n", 4*$1);
         }
     | _ITER data _SEMICOLON
         {
@@ -368,7 +393,7 @@ assignment_statement
                 printf("addi t1, x0, 1\n");
                 printf("sub t0, t0, t1\n");
             }
-            printf("sw t0, %d, x0\n", 4*$2);
+            printf("sw t0, %d, tp\n", 4*$2);
         }
     ;
 /* possible_pointer OR array of possible_pointer */
@@ -485,7 +510,7 @@ num_exp
                     printf("addi t1, x0, %d\n", atoi(get_name(&head, $1[0])));
                     break;
                 case 1:
-                    printf("lw t1, %d, x0\n", 4*$1[0]);
+                    printf("lw t1, %d, tp\n", 4*$1[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
@@ -499,7 +524,7 @@ num_exp
                     printf("addi t1, x0, %d\n", atoi(get_name(&head, $1[0])));
                     break;
                 case 1:
-                    printf("lw t1, %d, x0\n", 4*$1[0]);
+                    printf("lw t1, %d, tp\n", 4*$1[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
@@ -507,10 +532,10 @@ num_exp
             }
             switch($3[1]){
                 case 0:
-                    printf("addi t2, x0, %d\n", atoi(get_name(&head, $3[0])));
+                    printf("addi t2, tp, %d\n", atoi(get_name(&head, $3[0])));
                     break;
                 case 1:
-                    printf("lw t2, %d, x0\n", 4*$3[0]);
+                    printf("lw t2, %d, tp\n", 4*$3[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
@@ -566,8 +591,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n");
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
@@ -593,8 +616,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n");
                     break;
                 case SR:
                     //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
@@ -626,7 +647,7 @@ num_exp
                     printf("addi t1, x0, %d\n", atoi(get_name(&head, $1[0])));
                     break;
                 case 1:
-                    printf("lw t1, %d, x0\n", 4*$1[0]);
+                    printf("lw t1, %d, tp\n", 4*$1[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
@@ -681,8 +702,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n"); 
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
@@ -708,8 +727,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n");
                     break;
                 case SR:
                     //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
@@ -742,7 +759,7 @@ num_exp
                     printf("addi t2, x0, %d\n", atoi(get_name(&head, $2[0])));
                     break;
                 case 1:
-                    printf("lw t2, %d, x0\n", 4*$2[0]);
+                    printf("lw t2, %d, tp\n", 4*$2[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
@@ -797,8 +814,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n");
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
@@ -824,8 +839,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n");
                     break;
                 case SR:
                     //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
@@ -902,8 +915,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n");
                     break;
                 case MOD:
                     //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
@@ -929,8 +940,6 @@ num_exp
                     printf("bne t4, x0, l%dd5\n", lab_cnt);
                     printf("sub t1, x0, t1\n");
                     printf("l%dd5:\n", lab_cnt++);
-                    printf("add t0, x0, t1\n");
-                    printf("sw t0, 4, x0\n");
                     break;
                 case SR:
                     //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
@@ -961,7 +970,7 @@ num_exp
                     printf("addi t1, x0, %d\n", atoi(get_name(&head, $2[0])));
                     break;
                 case 1:
-                    printf("lw t1, %d, x0\n", 4*$2[0]);
+                    printf("lw t1, %d, tp\n", 4*$2[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
@@ -975,7 +984,7 @@ num_exp
                     printf("addi t1, x0, %d\n", atoi(get_name(&head, $2[0])));
                     break;
                 case 1:
-                    printf("lw t1, %d, x0\n", 4*$2[0]);
+                    printf("lw t1, %d, tp\n", 4*$2[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
@@ -985,7 +994,7 @@ num_exp
         }
     | data _ITER
         {
-            printf("lw t1, %d, x0\n", 4*$1);
+            printf("lw t1, %d, tp\n", 4*$1);
             if($2 == INC){
                 printf("addi t2, t1, 1\n");
             }
@@ -993,11 +1002,11 @@ num_exp
                 printf("addi t2, x0, 1\n"); //NO SUBI ...
                 printf("sub t0, t1, t2\n");
             }
-            printf("sw t0, %d, x0\n", 4*$1);
+            printf("sw t0, %d, tp\n", 4*$1);
         }
     | _ITER data
         {
-            printf("lw t1, %d, x0\n", 4*$2);
+            printf("lw t1, %d, tp\n", 4*$2);
             if($1 == INC){
                 printf("addi t1, t1, 1\n");
             }
@@ -1005,7 +1014,7 @@ num_exp
                 printf("addi t2, x0, 1\n");
                 printf("sub t1, t1, t2\n");
             }
-            printf("sw t0, %d, x0\n", 4*$2);
+            printf("sw t0, %d, tp\n", 4*$2);
         }
     ;
 /* HELPER */
@@ -1055,14 +1064,27 @@ exp
 function_call
     : _ID _LPAREN argument_list _RPAREN /* possible_pointer */
         {
+            args = 1;
             /* CAREFULL WITH x1 (ra) */
             tab_ind = lookup_symbol(&head, $1);
             if(tab_ind == -1){ // CHECK IF OFF BY ONE
                 printf("ERROR: FUNC CALL ISSUE: non-existing ID '%s'\n", $1);
             }
-            else{
-                $$ = tab_ind;
-            }
+
+            /* SET NEW INFO */
+            //gp stores parent (current) function data size (stack depth)
+            //tp stores grandparent function begining
+            //s11 stores child function begining
+            printf("add s11, tp, gp\n"); //update child's beginig
+            //printf("sw tp, 0, s11\n"); //set parent's begining in child
+            printf("add tp, tp, gp\n"); //update current function begining
+            printf("addi gp, gp, %d\n", 4*(1+lookup_function_size(&head, tab_ind))); //update current size
+
+            /* JUMP */
+            printf("jal %s\n", $1);
+            $$ = tab_ind;
+
+            printf("lw ra, 0, s11\n");
         }
     ;
 /* ARGUMENTS OF A FUNCTION CALL */
@@ -1075,7 +1097,15 @@ argument_list
 /* TO BE DELT WITH -- MAP TO THE DATA MEMORY*/
 argument
     : argument _COMMA num_exp
+        {
+            printf("sw t1, %d, s11\n", 4*args);
+            args++;
+        }
     | num_exp
+        {
+            printf("sw t1, %d, s11\n", 4*args);
+            args++;
+        }
     ;
 /* IF STATEMENT */
 /* PRINT ALL jmps */
@@ -1347,25 +1377,25 @@ for_start
 for_statement 
     : for_start data _ASSIGN num_exp _RPAREN statement
         {
-            printf("lw t0, %d, x0\n", 4*$2);
+            printf("lw t0, %d, tp\n", 4*$2);
             printf("add t0, x0, t1\n"); // PUT num_exp ON t1
-            printf("sw t0, %d, x0\n", 4*$2); // 4*$1 IS A SIMPLE MAP: SYM_TAB -> DATA MEMORY
+            printf("sw t0, %d, tp\n", 4*$2); // 4*$1 IS A SIMPLE MAP: SYM_TAB -> DATA MEMORY
 
             printf("beq x0 x0, l%df\n", lab_cnt);
             printf("l%df:\n", ++lab_cnt);
         }
     | for_start data _ASSIGN _AMP data _RPAREN statement
         {
-            printf("lw t0, %d, x0\n", 4*$2);
+            printf("lw t0, %d, tp\n", 4*$2);
             printf("addi t0, x0, %d\n", 4*$2);
-            printf("sw t0, %d, x0\n", 4*$2);
+            printf("sw t0, %d, tp\n", 4*$2);
 
             printf("beq x0 x0, l%df\n", lab_cnt);
             printf("l%df:\n", ++lab_cnt);
         }
     | for_start data _ITER _RPAREN statement
         {
-            printf("lw t0, %d, x0\n", 4*$2);
+            printf("lw t0, %d, tp\n", 4*$2);
             if($3 == INC){
                 printf("addi t0, t0, 1\n");
             }
@@ -1373,14 +1403,14 @@ for_statement
                 printf("addi t1, x0, 1\n");
                 printf("sub t0, t0, t1\n");
             }
-            printf("sw t0, %d, x0\n", 4*$2);
+            printf("sw t0, %d, tp\n", 4*$2);
 
             printf("beq x0 x0, l%df\n", lab_cnt);
             printf("l%df:\n", ++lab_cnt);
         }
     | for_start _ITER data _RPAREN statement
         {
-            printf("lw t0, %d, x0\n", 4*$2);
+            printf("lw t0, %d, tp\n", 4*$2);
             if($2 == INC){
                 printf("addi t0, t0, 1\n");
             }
@@ -1388,7 +1418,7 @@ for_statement
                 printf("addi t1, x0, 1\n");
                 printf("sub t0, t0, t1\n");
             }
-            printf("sw t0, %d, x0\n", 4*$3);
+            printf("sw t0, %d, tp\n", 4*$3);
 
             printf("beq x0 x0, l%df\n", lab_cnt);
             printf("l%df:\n", ++lab_cnt);
@@ -1460,9 +1490,11 @@ int main(){
     
     init_symtab(&head);
     
+    printf("jal start\n");
+
     syntax_error = yyparse();
     
-    print_symtab(&head);
+    // print_symtab(&head);
     
     clear_symbols(&head,0);
     

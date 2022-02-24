@@ -1,9 +1,19 @@
 //TEST ALU OPS
 
 //#define y 3
-//int add(int a,int b){
-//	return a+b;
-//}
+
+int sub(int a, int b){
+    int x;
+    x = a - b;
+	return x;
+}
+
+int add(int a, int b){
+    int x;
+    x = a + b;
+    x = x + sub(a, b);
+	return x;
+}
 
 int main(){
     int x;
@@ -42,9 +52,10 @@ int main(){
     
     // y++;
 
-    x = -13;
+    x = 13;
     y = 3;
-    x = x%y;
+    // x = x%y;
 
+    x = add(x, y);
     //return 0;
 }

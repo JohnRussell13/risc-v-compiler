@@ -35,6 +35,85 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type)
 	return i;
 }
 
+int lookup_symbol_func(SYMBOL_ENTRY **head, char *name, unsigned func){
+	int i;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+	for(i = 0; i < func; i++){
+		if(temp == NULL){
+			return -1;
+		}
+		temp = temp->next;
+	}
+	while(1){
+		if(temp == NULL){
+			return -1;
+		}
+		if(strcmp(temp->name, name) == 0){
+			return i;
+		}
+		temp = temp->next;
+		i++;
+	}
+
+	return i;
+}
+
+int lookup_symbol_stack(SYMBOL_ENTRY **head, char *name, unsigned func){
+	int i;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+	for(i = 0; i < func; i++){
+		temp = temp->next;
+	}
+	i = 0;
+	while(1){
+		if(temp == NULL){
+			return -1;
+		}
+		if(strcmp(temp->name, name) == 0){
+			return i;
+		}
+		temp = temp->next;
+		i++;
+	}
+
+	return i;
+}
+
+int lookup_function_size(SYMBOL_ENTRY **head, unsigned ind){
+	int i;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+
+	for(i = 0; i < ind; i++){
+		if(temp == NULL){
+			return -1;
+		}
+		temp = temp->next;
+	}
+	if(temp == NULL){
+		return -1;
+	}
+	
+	i = 0;
+	temp = temp->next;
+	if(temp == NULL){
+		return i;
+	}
+	while(temp->kind != FUN){
+		//if(temp->kind == VAR || temp->kind == PAR){ //simple memory coding is used, so even LIT will have its memory location
+			i++;
+		//}
+		temp = temp->next;
+		if(temp == NULL){
+			return i;
+		}
+	}
+
+	return i;
+}
+
 int lookup_symbol(SYMBOL_ENTRY **head, char *name){
 	int i = 0;
 	SYMBOL_ENTRY *temp;
@@ -165,6 +244,22 @@ unsigned get_func(SYMBOL_ENTRY **head){
 
 	while(temp != NULL){
 		if(temp->kind == FUN){
+			j = i;
+		}
+		temp = temp->next;
+		i++;
+	}
+	return j;
+}
+
+unsigned get_param(SYMBOL_ENTRY **head){
+	int i = 0;
+	int j = -1;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+
+	while(temp != NULL){
+		if(temp->kind == PAR || temp->kind == FUN){
 			j = i;
 		}
 		temp = temp->next;
