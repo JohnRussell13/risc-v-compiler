@@ -132,6 +132,85 @@ int lookup_symbol(SYMBOL_ENTRY **head, char *name){
 	return i;
 }
 
+int memory_map(SYMBOL_ENTRY **head, char *name, unsigned func){
+	int i, j, k;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+	for(i = 0; i < func; i++){
+		temp = temp->next;
+	}
+	i = 1;
+	while(1){
+		if(temp == NULL){
+			return -1;
+		}
+		if(strcmp(temp->name, name) == 0){
+			return 4*i;
+		}
+		if(temp->kind == VAR || temp->kind == PAR){
+			if(temp->dimension[0] != 0){
+				k = 1;
+				for(j = 0; j < MAX_DIM && temp->dimension[j] != 0; j++){
+					k *= temp->dimension[j];
+				}
+				i += k;
+			}
+			else{
+				i++;
+			}
+		}
+		temp = temp->next;
+	}
+
+	return 4*i;
+}
+
+int function_map(SYMBOL_ENTRY **head, unsigned ind){
+	int i, j, k;
+	SYMBOL_ENTRY *temp;
+	temp = *head;
+
+	for(i = 0; i < ind; i++){
+		if(temp == NULL){
+			return -1;
+		}
+		temp = temp->next;
+	}
+	if(temp == NULL){
+		return -1;
+	}
+	
+	temp = temp->next;
+	if(temp == NULL){
+		i = 2;
+		return 4*i;
+	}
+
+	i = 2;
+	while(temp->kind != FUN){
+
+		if(temp->kind == VAR || temp->kind == PAR){
+			if(temp->dimension[0] != 0){
+				k = 1;
+				for(j = 0; j < MAX_DIM && temp->dimension[j] != 0; j++){
+					k *= temp->dimension[j];
+				}
+				i += k;
+			}
+			else{
+				i++;
+			}
+		}
+
+		temp = temp->next;
+		if(temp == NULL){
+			return 4*i;
+		}
+	}
+
+	return 4*i;
+}
+
 /* WHEN IS THIS NEEDED??? */
 void set_name(SYMBOL_ENTRY **head, int index, char *name){
 	int i;

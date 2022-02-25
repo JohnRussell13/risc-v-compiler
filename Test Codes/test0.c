@@ -14,19 +14,21 @@
 // 	return x;
 // }
 
-int fact(int x){
-    int a;
-    a = 1;
-    if(x > 1){
-        a = fact(x-1);
-    }
-    a = a * x;
-    return a;
-}
+// int fact(int x){
+//     int a;
+//     a = 1;
+//     if(x > 1){
+//         a = fact(x-1);
+//     }
+//     a = a * x;
+//     return a;
+// }
 
 int main(){
     int x;
-    int y;
+    //int y;
+    //int a[5];
+    int b[5][3];
     // int z0;
     // int w;
     // int q;
@@ -71,6 +73,20 @@ int main(){
     //x = 3+sub(13,3);
     //x = add(13,3);
 
-    x = fact(5);
+    //x = fact(5);
+
+    // for(x=0;x<5;x++){
+    //     a[x] = x;
+    // }
+
+    // for(y=0;y<5;y++){
+    //     x = x + a[y];
+    // }
+
+    for(x=0;x<5;x++){
+        b[x][0] = x;
+        b[x][1] = x+1;
+        b[x][2] = x+2;
+    }
     //return 0;
 }

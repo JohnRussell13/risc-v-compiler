@@ -12,6 +12,7 @@
     int warning_count;
     int num_exp_cnt = 0; // not in use now, but needed to make deep nested expresions possible; also needed for rel
     int lab_cnt = 0;
+    int lab_for_cnt = 0;
     int func_ind = 0;
     int args = 1;
     int sq_arg = 0;
@@ -123,8 +124,8 @@ program
             printf("start:\n");
             printf("jal count\n");
             printf("count:\n");
-            printf("addi gp, x0, %d\n", 4*(2+lookup_function_size(&head, lookup_symbol(&head, "main"))));
-            printf("addi tp, ra, 20\n");
+            printf("addi gp, x0, %d\n", function_map(&head, lookup_symbol(&head, "main")));
+            printf("addi tp, ra, 20\n"); //these lines are 4*5
             printf("add s11, tp, gp\n"); //update child's beginig  
             printf("jal main\n");
             printf("end: nop\n");
@@ -304,13 +305,12 @@ variable
             if($2[1]){
                 set_type(&head, $2[0] + func_ind, $1);
                 set_kind(&head, $2[0] + func_ind, VAR);
-                tab_array_count = 0;
             }
             else{
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
-            // func_ind = get_func(&head);
-            // set_dimension(&head, $2[0] + func_ind, $4, tab_array_count);
+            func_ind = get_func(&head);
+            set_dimension(&head, $2[0] + func_ind, $3, tab_array_count);
         }
     ;
 /* ARRAY PART IN A DECLARATION */
@@ -366,7 +366,7 @@ compound_statement
     ;
 /* ASSIGNMENT -- x = 5;*/
 /* PRINT ASSEMBLY CODE */
-/* TO BE DELT WITH -- i++ vs ++i */
+/* TO BE DELT WITH -- VAR vs PAR */
 assignment_statement
     : data _ASSIGN
         {
@@ -427,7 +427,7 @@ data
             }
             $$ = $1[0] + func_ind;
 
-            printf("addi s4, tp, %d\n", 4*$1[0]);
+            printf("addi s4, tp, %d\n", memory_map(&head, tab_name, func_ind));
         }
     | possible_pointer array_member
         {
@@ -442,16 +442,14 @@ data
             }
             $$ = $1[0] + func_ind;
 
-            printf("addi s4, tp, %d\n", $1[0]);
-
             dims = get_dimension(&head, $1[0] + get_func(&head));
 
             printf("add s4, x0, x0\n");
 
-            for(sq_arg = 0; sq_arg < MAX_DIM || dims[sq_arg] == 0; sq_arg++){
+            for(sq_arg = 0; sq_arg < MAX_DIM && dims[sq_arg] > 0; sq_arg++){
                 sq_mul = 1;
                 printf("add s1, a%d, x0\n", sq_arg);
-                for(sq_subarg = sq_arg; sq_subarg < MAX_DIM || dims[sq_subarg] == 0; sq_subarg++){
+                for(sq_subarg = sq_arg + 1; sq_subarg < MAX_DIM && dims[sq_subarg] > 0; sq_subarg++){
                     sq_mul = sq_mul * dims[sq_subarg];
                 }
                 printf("addi s2, x0, %d\n", sq_mul);
@@ -474,7 +472,12 @@ data
             }
             lab_cnt++;
 
-            printf("add s4, s4, x0\n");
+            // s4 = 4 * s4
+            printf("add s4, s4, s4\n");
+            printf("add s4, s4, s4\n");
+
+            printf("add s4, s4, tp\n");
+            printf("addi s4, s4, %d\n", memory_map(&head, tab_name, func_ind));
 
         }
     ;
@@ -551,7 +554,6 @@ log_op
 /* NUMERICAL EXPRESSION -- (x+7)*sq(3) */
 /* PRINT ASSEMBLY CODE BY STORING THE INTERMEDIATE RESULTS */
 /* RESULTS ARE KEPT IN t1 AND t2 */
-/* TO BE DELT WITH0 - *, /, FUNCTIONS */
 num_exp
     : exp
         {
@@ -1146,7 +1148,7 @@ function_call
             //s11 stores child function begining
             printf("add tp, tp, gp\n"); //update current function begining
             //printf("add s10, gp, x0\n"); //temp
-            printf("addi gp, x0, %d\n", 4*(2+lookup_function_size(&head, tab_ind))); //update current size
+            printf("addi gp, x0, %d\n", function_map(&head, tab_ind)); //update current size
             printf("add s11, s11, gp\n"); //update child's beginig
 
             /* JUMP */
@@ -1168,7 +1170,6 @@ argument_list
     | argument
     ;
 /* ARGUMENTS OF A FUNCTION CALL */
-/* TO BE DELT WITH -- MAP TO THE DATA MEMORY*/
 argument
     : argument _COMMA num_exp
         {
@@ -1375,7 +1376,7 @@ return_statement
         }
     ;
 /* WHILE STATEMENT */
-/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) - ??? */
 while_statement
     : _WHILE {printf("l%dw:\n", lab_cnt);} _LPAREN condition _RPAREN {printf("beq t1, x0, l%dw\n", lab_cnt+1);}  statement
         {
@@ -1434,51 +1435,32 @@ do_while_statement
     ;
 */
 /* FOR STATEMENT */
-/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
-/* for_statement
-    : _FOR _LPAREN assignment_statement {
-        printf("l%df:\n", lab_cnt);
-    } condition {
-        printf("beq t1, x0, l%df\n", lab_cnt+1);
-    } _SEMICOLON change_statement _RPAREN statement {
-        printf("beq x0 x0, l%df\n", lab_cnt);
-        printf("l%df:\n", ++lab_cnt);
-    }
-    ; */
+/* TO BE DELT WITH -- NESTED LABELS */
 for_start
     : _FOR _LPAREN assignment_statement {
-        printf("l%df:\n", lab_cnt);
-    } condition {
-        printf("beq t1, x0, l%df\n", lab_cnt+1);
-    } _SEMICOLON
+            printf("l%df0:\n", ++lab_for_cnt);
+        } condition {
+            printf("beq t1, x0, l%df1\n", lab_for_cnt);
+        } _SEMICOLON
     ;
 
 for_statement 
-    : for_start data _ASSIGN num_exp _RPAREN statement
-        {
-            printf("lw t0, 0, s4\n");
-            printf("add t0, x0, t1\n"); // PUT num_exp ON t1
+    : for_start data _ASSIGN {
+            push("s4", 1);
+        } num_exp _RPAREN statement {
+            pop("s4", 1);
+            printf("add t0, x0, t1\n"); //PUT num_exp ON t1
             printf("sw t0, 0, s4\n");
 
-            printf("beq x0 x0, l%df\n", lab_cnt);
-            printf("l%df:\n", ++lab_cnt);
+            printf("beq x0 x0, l%df0\n", lab_for_cnt);
+            printf("l%df1:\n", lab_for_cnt);
         }
-    | for_start data _ASSIGN _AMP 
-        {
-            printf("add s5, s4, x0\n");
-        }
-        data _RPAREN statement
-        {
-            printf("add t0, s4, x0\n");
-            printf("sw t0, 0, s5\n");
-
-            printf("beq x0 x0, l%df\n", lab_cnt);
-            printf("l%df:\n", ++lab_cnt);
-        }
-    | for_start data _ITER _RPAREN statement
-        {
+    | for_start data {
+            push("s4", 1);
+        } _ITER _RPAREN statement {
+            pop("s4", 1);
             printf("lw t0, 0, s4\n");
-            if($3 == INC){
+            if($4 == INC){
                 printf("addi t1, t0, 1\n");
             }
             else{
@@ -1486,13 +1468,15 @@ for_statement
             }
             printf("sw t1, 0, s4\n");
 
-            printf("beq x0 x0, l%df\n", lab_cnt);
-            printf("l%df:\n", ++lab_cnt);
+            printf("beq x0 x0, l%df0\n", lab_for_cnt);
+            printf("l%df1:\n", lab_for_cnt);
         }
-    | for_start _ITER data _RPAREN statement
-        {
+    | for_start {
+            push("s4", 1);
+        } _ITER data _RPAREN statement {
+            pop("s4", 1);
             printf("lw t0, 0, s4\n");
-            if($2 == INC){
+            if($3 == INC){
                 printf("addi t0, t0, 1\n");
             }
             else{
@@ -1500,9 +1484,18 @@ for_statement
             }
             printf("sw t0, 0, s4\n");
 
-            printf("beq x0 x0, l%df\n", lab_cnt);
-            printf("l%df:\n", ++lab_cnt);
+            printf("beq x0 x0, l%df0\n", lab_for_cnt);
+            printf("l%df1:\n", lab_for_cnt);
         }
+    /* | for_start data _ASSIGN _AMP {
+            printf("add s5, s4, x0\n");
+        } data _RPAREN statement {
+            printf("add t0, s4, x0\n");
+            printf("sw t0, 0, s5\n");
+
+            printf("beq x0 x0, l%df\n", lab_for_cnt);
+            printf("l%df:\n", ++lab_for_cnt);
+        } */
     ;
 
 /* SIMPLE ASSIGN STATEMENTS */

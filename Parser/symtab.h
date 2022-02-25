@@ -27,6 +27,10 @@ int lookup_symbol_func(SYMBOL_ENTRY **head, char *name, unsigned func);
 int lookup_symbol_stack(SYMBOL_ENTRY **head, char *name, unsigned func);
 int lookup_function_size(SYMBOL_ENTRY **head, unsigned ind);
 
+/* MEMORY MAPS */
+int memory_map(SYMBOL_ENTRY **head, char *name, unsigned func);
+int function_map(SYMBOL_ENTRY **head, unsigned ind);
+
 /* METHODS FOR UPDATING ELEMENTS IN SYMBOL TABLE */
 void set_name(SYMBOL_ENTRY **head, int index, char *name);
 char* get_name(SYMBOL_ENTRY **head, int index);
