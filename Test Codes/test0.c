@@ -2,17 +2,26 @@
 
 //#define y 3
 
-int sub(int a, int b){
-    int x;
-    x = a - b;
-	return x;
-}
+// int sub(int a, int b){
+//     int x;
+//     x = a - b;
+// 	return x;
+// }
 
-int add(int a, int b){
-    int x;
-    x = a + b;
-    x = x + sub(a, b);
-	return x;
+// int add(int a, int b){
+//     int x;
+//     x = sub(a,b);
+// 	return x;
+// }
+
+int fact(int x){
+    int a;
+    a = 1;
+    if(x > 1){
+        a = fact(x-1);
+    }
+    a = a * x;
+    return a;
 }
 
 int main(){
@@ -52,10 +61,10 @@ int main(){
     
     // y++;
 
-    x = 13;
-    y = 3;
+    // x = 13;
+    // y = 3;
     // x = x%y;
 
-    x = add(x, y);
+    x = fact(4);
     //return 0;
 }

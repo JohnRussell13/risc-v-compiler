@@ -72,6 +72,7 @@
 ">"         { yylval.i = GT;  return _RELOP; }
 ">="        { yylval.i = GEQ; return _RELOP; }
 "=="        { yylval.i = EQ;  return _RELOP; }
+"!="        { yylval.i = NEQ; return _RELOP; }
 
     /* NAMES AND VALUES */
 [a-zA-Z][a-zA-Z0-9_]*   { yylval.s = strdup(yytext); return _ID; } // WHY FTN? WHY??? ..... 

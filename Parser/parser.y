@@ -115,11 +115,14 @@ program
     : function_list
         {
             printf("start:\n");
-            printf("addi gp, x0, %d\n", 4*(1+lookup_function_size(&head, lookup_symbol(&head, "main"))));
-            printf("addi s11, gp, 0\n");
-            printf("addi tp, x0, 0\n");
+            printf("jal count\n");
+            printf("count:\n");
+            printf("addi gp, x0, %d\n", 4*(2+lookup_function_size(&head, lookup_symbol(&head, "main"))));
+            printf("addi tp, ra, 20\n");
+            printf("add s11, tp, gp\n"); //update child's beginig  
             printf("jal main\n");
             printf("end: nop\n");
+            //print_symtab(&head);
         }
     ;
 /* LIST OF FUNCTIONS -- RECURSIVE RULE */
@@ -145,7 +148,8 @@ function
         _LPAREN parameter_list _RPAREN 
         {
             printf("%s:\n", $2);
-            printf("sw ra, 0, s11\n");
+            printf("sw ra, 0, tp\n"); //save where to return
+            printf("sw gp, -4, s11\n"); //save data size of parent function
         } 
         body
         {
@@ -233,7 +237,7 @@ parameter
     : parameter _COMMA type possible_pointer
         {
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $4[0]));
+            strcpy(tab_name, get_name(&head, $4[0] + func_ind));
             if($4[1]){
                 set_type(&head, $4[0] + func_ind, $3);
                 set_kind(&head, $4[0] + func_ind, PAR); // PAR or VAR? is PAR needed? yes - PAR can't be changed
@@ -245,7 +249,7 @@ parameter
     | type possible_pointer
         {
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $2[0]));
+            strcpy(tab_name, get_name(&head, $2[0] + func_ind));
             if($1 == VOID){
                 printf("ERROR: PARAM DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
             }
@@ -275,9 +279,9 @@ variable
     : type possible_pointer _SEMICOLON
         {
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $2[0]));
+            strcpy(tab_name, get_name(&head, $2[0] + func_ind));
             if($1 == VOID){
-                printf("ERROR: VAR DEF ISSUE: variable '%s' can not be of VOID type\n",tab_name);
+                printf("ERROR: VAR DEF ISSUE: variable '%s' can not be of VOID type\n", tab_name);
             }
             if($2[1]){
                 set_type(&head, $2[0] + func_ind, $1);
@@ -290,7 +294,7 @@ variable
     | type possible_pointer
         {
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $2[0]));
+            strcpy(tab_name, get_name(&head, $2[0] + func_ind));
             if($2[1]){
                 set_type(&head, $2[0] + func_ind, $1);
                 set_kind(&head, $2[0] + func_ind, VAR);
@@ -401,30 +405,28 @@ assignment_statement
 data
     : possible_pointer
         {
-            strcpy(tab_name, get_name(&head, $1[0]));
-            tab_kind = get_kind(&head, $1[0]);
+            func_ind = get_func(&head);
+            strcpy(tab_name, get_name(&head, $1[0] + func_ind));
+            tab_kind = get_kind(&head, $1[0] + func_ind);
             if($1[1]){
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
-            else{
-                if(tab_kind != VAR && tab_kind != PAR){
-                    printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind'%s'\n", tab_name);
-                }
-                else{
-                    $$ = $1[0];
-                }
+            if(tab_kind != VAR && tab_kind != PAR){
+                printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind - '%s'\n", tab_name);
             }
+            $$ = $1[0];
         }
     | possible_pointer array_member
         {
-            strcpy(tab_name, get_name(&head, $1[0]));
-            tab_kind = get_kind(&head, $1[0]);
+            func_ind = get_func(&head);
+            strcpy(tab_name, get_name(&head, $1[0] + func_ind));
+            tab_kind = get_kind(&head, $1[0] + func_ind);
             if($1[1]){
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
             else{
                 if(tab_kind != VAR && tab_kind != PAR){
-                    printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind'%s'\n", tab_name);
+                    printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind - '%s'\n", tab_name);
                 }
                 else{
                     $$ = $1[0];
@@ -514,6 +516,7 @@ num_exp
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
+                    printf("lw t1, 0, a0\n");
                     break;
             }
         }
@@ -528,17 +531,19 @@ num_exp
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
+                    printf("lw t1, 0, a0\n");
                     break;
             }
             switch($3[1]){
                 case 0:
-                    printf("addi t2, tp, %d\n", atoi(get_name(&head, $3[0])));
+                    printf("addi t2, x0, %d\n", atoi(get_name(&head, $3[0])));
                     break;
                 case 1:
                     printf("lw t2, %d, tp\n", 4*$3[0]);
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
+                    printf("lw t2, 0, a0\n");
                     break;
             }
             switch($2){
@@ -651,6 +656,7 @@ num_exp
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
+                    printf("lw t1, 0, a0\n");
                     break;
             }
             switch($2){
@@ -763,6 +769,7 @@ num_exp
                     break;
                 case 2:
                     /* DEAL WITH FUNCTION RETURN */
+                    printf("lw t2, 0, a0\n");
                     break;
             }
             switch($1){
@@ -1037,7 +1044,8 @@ exp
     | data
         {
             /*!!! custom map() sym_tab -> memory location !!!*/
-            tab_kind = get_kind(&head, $1);
+            func_ind = get_func(&head);
+            tab_kind = get_kind(&head, $1 + func_ind);
             if(tab_kind == VAR || tab_kind == PAR){
                 $$[0] = $1;
                 $$[1] = 1;
@@ -1049,7 +1057,8 @@ exp
     | function_call
         {
             /*!!! custom map() sym_tab -> label !!!*/
-            tab_kind = get_kind(&head, $1);
+            func_ind = get_func(&head);
+            tab_kind = get_kind(&head, $1 + func_ind);
             if(tab_kind == VOID){
                 printf("ERROR: FUNC CALL ISSUE: no return value of a void kind\n");
             }
@@ -1075,16 +1084,21 @@ function_call
             //gp stores parent (current) function data size (stack depth)
             //tp stores grandparent function begining
             //s11 stores child function begining
-            printf("add s11, tp, gp\n"); //update child's beginig
-            //printf("sw tp, 0, s11\n"); //set parent's begining in child
             printf("add tp, tp, gp\n"); //update current function begining
-            printf("addi gp, gp, %d\n", 4*(1+lookup_function_size(&head, tab_ind))); //update current size
+            //printf("add s10, gp, x0\n"); //temp
+            printf("addi gp, x0, %d\n", 4*(2+lookup_function_size(&head, tab_ind))); //update current size
+            printf("add s11, s11, gp\n"); //update child's beginig
 
             /* JUMP */
             printf("jal %s\n", $1);
             $$ = tab_ind;
 
-            printf("lw ra, 0, s11\n");
+            printf("sub s11, s11, gp\n"); //update child's beginig
+            printf("lw gp, -4, s11\n");
+            //printf("add gp, s10, x0\n"); //update current size
+            printf("sub tp, tp, gp\n"); //update current function begining
+
+            printf("lw ra, 0, tp\n");
         }
     ;
 /* ARGUMENTS OF A FUNCTION CALL */
@@ -1279,20 +1293,25 @@ return_statement
             if(tab_type == VOID){
                 printf("ERROR: RETURN ISSUE: value in a void type\n");
             }
-            else{
-                //set_value(&head, tab_ind, $2);
-            }
+            // printf("add a0, tp, gp\n");
+            // printf("addi a0, a0, -8\n");
+            // printf("sw t1, 0, a0\n");
+
+            printf("addi a0, tp, 4\n");
+            printf("sw t1, 0, a0\n");
+
+            printf("jalr ra\n");
         }
     | _RETURN _SEMICOLON /* FOR VOID ONLY */
         {
-            /* ALWAYS NEEDED OR NOT? */
-
             /* JUMP BACK */
             tab_ind = get_func(&head);
             tab_type = get_type(&head, tab_ind);
             if(tab_type != VOID){
                 printf("ERROR: RETURN ISSUE: missing value in non-void type\n");
             }
+
+            printf("jalr ra\n");
         }
     ;
 /* WHILE STATEMENT */
