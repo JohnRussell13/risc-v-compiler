@@ -10,7 +10,7 @@
 
 // int add(int a, int b){
 //     int x;
-//     x = sub(a,b);
+//     x = (a+b)+sub(a,b);
 // 	return x;
 // }
 
@@ -65,6 +65,12 @@ int main(){
     // y = 3;
     // x = x%y;
 
-    x = fact(4);
+    //x = (10+9) + ((8-7) - (6-3));
+    //x = (x+3) + (x - (x-3));
+
+    //x = 3+sub(13,3);
+    //x = add(13,3);
+
+    x = fact(5);
     //return 0;
 }

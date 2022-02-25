@@ -57,4 +57,8 @@ void print_symtab(SYMBOL_ENTRY **head);
 /* DELETE TABLE -- DELETES EVERYTHING BELOVE head */
 void destroy_list(SYMBOL_ENTRY **head);
 
+/* STACK */
+void push(char *reg, int size);
+void pop(char *reg, int size);
+
 #endif

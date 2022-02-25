@@ -26,3 +26,10 @@ run:
 	./parser < ./../"Test Codes"/test7.c >> res.txt
 	echo "----- 8 -----" >> res.txt
 	./parser < ./../"Test Codes"/test8.c >> res.txt
+
+test: parser.y lexer.l
+	rm -f $(ODIR)/*.o parser res.txt lex.yy.c parser.tab.h parser.tab.c
+	flex lexer.l
+	bison -d parser.y
+	gcc parser.tab.c symtab.c lex.yy.c -o parser
+	./parser < ./../"Test Codes"/test0.c > res.txt
