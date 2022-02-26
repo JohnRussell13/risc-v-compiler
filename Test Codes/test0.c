@@ -24,6 +24,10 @@
 //     return a;
 // }
 
+void ptr(int *x){
+    *x = 4;
+}
+
 int main(){
     int x;
     int y;
@@ -105,15 +109,18 @@ int main(){
     //     }
     // }
 
-    x = 0;
+    // x = 0;
 
-    while(x < 5){
-        y = 3;
-        while(y > 0){
-            y--;
-        }
-        x++;
-    }
+    // while(x < 5){
+    //     y = 3;
+    //     while(y > 0){
+    //         y--;
+    //     }
+    //     x++;
+    // }
+
+    x = 5;
+    ptr(&x);
 
     //return 0;
 }

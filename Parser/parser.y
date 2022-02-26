@@ -98,8 +98,8 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type literal data function_call ar_op log_op helper_num_exp helper_cond helper_cond_simp
-%type <ii> symbol exp
+%type <i> type literal function_call ar_op log_op helper_num_exp helper_cond helper_cond_simp
+%type <ii> exp
 %type <iii> helper_exp
 %type <d> array_member_definition
 
@@ -198,40 +198,6 @@ type
             $$ = $1;
         }
     ;
-/*    ID OF SOME PAR OR VAR    */
-/* RETURN INDEX AND IS IT NEW */
-symbol
-    : _ID {
-            strcpy(tab_name, $1);
-            func_ind = get_func(&head);
-            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
-            if(tab_ind == -1){ //new or new in this function
-                tab_ind = insert_symbol(&head, tab_name, 0, 0); // JUST SET THE NAME
-                
-                $$[0] = tab_ind - func_ind;
-                $$[1] = 1;
-            }
-            else{
-                $$[0] = tab_ind - func_ind;
-                $$[1] = 0;
-            }
-        }
-    | _STAR _ID {
-            strcpy(tab_name, $2);
-            func_ind = get_func(&head);
-            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
-            if(tab_ind == -1){
-                tab_ind = insert_symbol(&head, tab_name, 0, 0);
-                set_pointer(&head, tab_ind + func_ind);
-                $$[0] = tab_ind - func_ind;
-                $$[1] = 1;
-            }
-            else{
-                $$[0] = tab_ind - func_ind;
-                $$[1] = 0;
-            }
-        }
-    ;
 /*  NO PARAMETERS OR LIST OF FUNCTIONS PARAMETERS  */
 parameter_list
     : /* empty */
@@ -239,30 +205,76 @@ parameter_list
 /*  LIST OF FUNCTIONS PARAMETERS  */
 /* RECURSION, CHEK IF NAME IS FREE AND MAKE NEW SYM_TAB ENTRY */
 parameter
-    : parameter _COMMA type symbol {
+    : parameter _COMMA parameter_decl
+    | parameter_decl
+    ;
+/*    PARAM DECLARATION    */
+/* CHEK IF NAME IS FREE AND MAKE NEW SYM_TAB ENTRY */
+/* TO DO - _STAR _STAR */
+parameter_decl
+    : type _ID {
+            strcpy(tab_name, $2);
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $4[0] + func_ind));
-            if($4[1]){
-                set_type(&head, $4[0] + func_ind, $3);
-                set_kind(&head, $4[0] + func_ind, PAR); // PAR or VAR? is PAR needed? yes - PAR can't be changed
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, PAR, $1);
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
-        }
-    | type symbol {
-            func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $2[0] + func_ind));
             if($1 == VOID){
                 printf("ERROR: PARAM DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
             }
-            if($2[1]){
-                set_type(&head, $2[0] + func_ind, $1);
-                set_kind(&head, $2[0] + func_ind, PAR);
+        }
+    | type _STAR _ID {
+            strcpy(tab_name, $3);
+            func_ind = get_func(&head);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, PAR, $1);
             }
             else{
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
+
+            if($1 == VOID){
+                printf("ERROR: PARAM DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
+            }
+            set_pointer(&head, tab_ind);
+        }
+    | type _ID array_member_definition {
+            strcpy(tab_name, $2);
+            func_ind = get_func(&head);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, PAR, $1);
+            }
+            else{
+                printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
+
+            if($1 == VOID){
+                printf("ERROR: PARAM DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
+            }
+            set_pointer(&head, tab_ind);
+            set_dimension(&head, tab_ind, $3, sq_size);
+        }
+    | type _STAR _ID array_member_definition {
+            strcpy(tab_name, $3);
+            func_ind = get_func(&head);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, PAR, $1);
+            }
+            else{
+                printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
+
+            if($1 == VOID){
+                printf("ERROR: PARAM DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
+            }
+            set_pointer(&head, tab_ind);
+            set_dimension(&head, tab_ind, $4, sq_size);
         }
     ;
 /*    BODY OF A FUNCTION    */
@@ -273,51 +285,100 @@ body
 /* RECURSION */
 variable_list
     : /* empty */
-    | variable_list variable
+    | variable_list variable_decl_line
+    ;
+/*    VARIABLE DECLARATION LINE   */
+/* MORE VARS IN ONE LINE */
+variable_decl_line
+    : type {
+        tab_type = $1;
+    } variable_decls _SEMICOLON
+    ;
+/*    VARIABLE DECLARATIONS   */
+/* MORE VARS IN ONE LINE */
+variable_decls
+    : variable_decls _COMMA variable_decl
+    | variable_decl
     ;
 /*    VARIABLE DECLARATION    */
 /* CHEK IF NAME IS FREE AND MAKE NEW SYM_TAB ENTRY */
-variable
-    : type symbol _SEMICOLON {
+/* TO DO - MORE IN ONE LINE */
+variable_decl
+    : _ID {
+            strcpy(tab_name, $1);
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $2[0] + func_ind));
-            if($1 == VOID){
-                printf("ERROR: VAR DEF ISSUE: variable '%s' can not be of VOID type\n", tab_name);
-            }
-            if($2[1]){
-                set_type(&head, $2[0] + func_ind, $1);
-                set_kind(&head, $2[0] + func_ind, VAR);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, VAR, tab_type);
             }
             else{
-                printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
+                printf("ERROR: DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
+            if(tab_type == VOID){
+                printf("ERROR: DECL DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
             }
         }
-    | type symbol array_member_definition _SEMICOLON {
+    | _STAR _ID {
+            strcpy(tab_name, $2);
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $2[0] + func_ind));
-            if($2[1]){
-                set_type(&head, $2[0] + func_ind, $1);
-                set_kind(&head, $2[0] + func_ind, VAR);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, VAR, tab_type);
             }
             else{
-                printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
+                printf("ERROR: DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
+
+            if(tab_type == VOID){
+                printf("ERROR: DECL DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
+            }
+            set_pointer(&head, tab_ind);
+        }
+    | _ID array_member_definition {
+            strcpy(tab_name, $1);
             func_ind = get_func(&head);
-            set_dimension(&head, $2[0] + func_ind, $3, sq_size);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, VAR, tab_type);
+            }
+            else{
+                printf("ERROR: DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
+
+            if(tab_type == VOID){
+                printf("ERROR: DECL DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
+            }
+            set_pointer(&head, tab_ind);
+            set_dimension(&head, tab_ind, $2, sq_size);
+        }
+    | _STAR _ID array_member_definition {
+            strcpy(tab_name, $2);
+            func_ind = get_func(&head);
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
+                tab_ind = insert_symbol(&head, tab_name, VAR, tab_type);
+            }
+            else{
+                printf("ERROR: DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
+            }
+
+            if(tab_type == VOID){
+                printf("ERROR: DECL DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
+            }
+            set_pointer(&head, tab_ind);
+            set_dimension(&head, tab_ind, $3, sq_size);
         }
     ;
 /*  ARRAY PART IN A DECLARATION  */
 /* RETURN DIMENSIONS */
 array_member_definition
-    : array_member_definition _LSQBRACK literal _RSQBRACK
-        {
+    : array_member_definition _LSQBRACK literal _RSQBRACK {
             if(sq_size >= MAX_DIM){
                 printf("ERROR: ARRAY SIZE ISSUE: too many dimensions\n");
             }
             $$[sq_size++] = atoi(get_name(&head, $3));
         }
-    | _LSQBRACK literal _RSQBRACK
-        {
+    | _LSQBRACK literal _RSQBRACK {
             sq_size = 0;
             $$[sq_size++] = atoi(get_name(&head, $2));
         }
@@ -359,12 +420,6 @@ assignment_statement
             printf("add t0, x0, t1\n"); // PUT num_exp ON t1
             printf("sw t0, 0, s4\n");
         }
-    | data _ASSIGN _AMP {
-            printf("add s5, s4, x0\n");
-        } data _SEMICOLON {
-            printf("add t0, s4, x0\n");
-            printf("sw t0, 0, s5\n");
-        }
     | data _ITER _SEMICOLON {
             printf("lw t0, 0, s4\n");
             if($2 == INC){
@@ -388,36 +443,77 @@ assignment_statement
     ;
 /*  MEMORY MAP  */
 /* CHECK IF EXISTS AND RETURN ITS MEMORY_MAP */
-data
-    : symbol
-        {
+mem_map
+    : _ID array_member {
+            strcpy(tab_name, $1);
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $1[0] + func_ind));
-            tab_kind = get_kind(&head, $1[0] + func_ind);
-            if($1[1]){
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
+            tab_kind = get_kind(&head, tab_ind);
             if(tab_kind != VAR && tab_kind != PAR){
                 printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind - '%s'\n", tab_name);
             }
-            $$ = $1[0] + func_ind;
+            if(get_pointer(&head, tab_ind) > 0){
+                printf("ERROR: DATA ISSUE: ID of a pointer type - '%s'\n", tab_name);
+            }
 
-            printf("addi s4, tp, %d\n", memory_map(&head, tab_name, func_ind));
+            dims = get_dimension(&head, tab_ind);
+
+            printf("add s4, x0, x0\n");
+
+            for(sq_arg = 0; sq_arg < MAX_DIM && dims[sq_arg] > 0; sq_arg++){
+                sq_mul = 1;
+                printf("add s1, a%d, x0\n", sq_arg);
+                for(sq_subarg = sq_arg + 1; sq_subarg < MAX_DIM && dims[sq_subarg] > 0; sq_subarg++){
+                    sq_mul = sq_mul * dims[sq_subarg];
+                }
+                printf("addi s2, x0, %d\n", sq_mul);
+
+                // should use MUL and DIV which are in RISC-V
+                printf("addi s3, x0, 0\n");
+                printf("blt s2, x0, l%ds2q%d\n", lab_cnt, sq_arg);
+                printf("l%dsq%d:\n", lab_cnt, sq_arg);
+                printf("beq s2, x0, l%ds1q%d\n", lab_cnt, sq_arg);
+                printf("addi s2, s2, -1\n");
+                printf("add s3, s3, s1\n");
+                printf("beq x0, x0, l%dsq%d\n", lab_cnt, sq_arg);
+                printf("l%ds2q%d:\n", lab_cnt, sq_arg);
+                printf("beq s2, x0, l%ds1q%d\n", lab_cnt, sq_arg);
+                printf("addi s2, s2, 1\n");
+                printf("sub s3, s3, s1\n");
+                printf("beq x0, x0, l%ds2q%d\n", lab_cnt, sq_arg);
+                printf("l%ds1q%d:\n", lab_cnt, sq_arg);
+                printf("add s4, s4, s3\n");
+            }
+            lab_cnt++;
+
+            // s4 = 4 * s4
+            printf("add s4, s4, s4\n");
+            printf("add s4, s4, s4\n");
+
+            printf("add s4, s4, tp\n");
+            printf("addi s4, s4, %d\n", memory_map(&head, tab_name, func_ind));
         }
-    | symbol array_member
-        {
+data
+    : mem_map
+    | _STAR _ID array_member {
+            strcpy(tab_name, $2);
             func_ind = get_func(&head);
-            strcpy(tab_name, get_name(&head, $1[0] + func_ind));
-            tab_kind = get_kind(&head, $1[0] + func_ind);
-            if($1[1]){
+            tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
+            if(tab_ind == -1){ //new or new in this function
                 printf("ERROR: DATA ISSUE: non-existing ID '%s'\n", tab_name);
             }
+            tab_kind = get_kind(&head, tab_ind);
             if(tab_kind != VAR && tab_kind != PAR){
                 printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind - '%s'\n", tab_name);
             }
-            $$ = $1[0] + func_ind;
+            if(get_pointer(&head, tab_ind) < 1){
+                printf("ERROR: DATA ISSUE: ID of a non-pointer type - '%s'\n", tab_name);
+            }
 
-            dims = get_dimension(&head, $1[0] + get_func(&head));
+            dims = get_dimension(&head, tab_ind);
 
             printf("add s4, x0, x0\n");
 
@@ -454,6 +550,7 @@ data
             printf("add s4, s4, tp\n");
             printf("addi s4, s4, %d\n", memory_map(&head, tab_name, func_ind));
 
+            printf("lw s4, 0, s4\n"); //pointer
         }
     ;
 /*  ARRAY PARAMETERS  */
@@ -461,12 +558,11 @@ data
 /* TO DO -- BE CAREFULL WITH function_call: MUSN'T BE VOID*/
 array_member
     : array_member _LSQBRACK num_exp _RSQBRACK {
+            printf("add a%d, t1, x0\n", sq_arg);
             sq_arg++;
-            printf("add a%d, t1, x0\n", sq_arg);
         }
-    | _LSQBRACK num_exp _RSQBRACK {
+    | /*empty*/ {
             sq_arg = 0;
-            printf("add a%d, t1, x0\n", sq_arg);
         }
     ;
 /*  ARITHMETICAL OPERATIONS  */
@@ -998,6 +1094,9 @@ num_exp
             }
             printf("sw t1, 0, s4\n");
         }
+    | _AMP mem_map {
+        printf("addi t1, s4, 0\n");
+    }
     ;
 /* HELPER */
 /* PUT ON STACK INDEX */
@@ -1033,11 +1132,6 @@ exp
             $$[1] = 0;
         }
     | data {
-            tab_kind = get_kind(&head, $1);
-            if(tab_kind != VAR && tab_kind != PAR){
-                printf("ERROR: EXPRESSION ISSUE: no value of a non-VAR and non-PAR kind\n");
-            }
-            $$[0] = $1;
             $$[1] = 1;
         }
     | function_call {
@@ -1082,7 +1176,7 @@ argument_list
     | argument
     ;
 /* ARGUMENTS OF A FUNCTION CALL */
-/* SAVE TO MEMORY*/
+/* RECURSION */
 argument
     : argument _COMMA num_exp {
             printf("sw t1, %d, s11\n", 4*args);
