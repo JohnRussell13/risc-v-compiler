@@ -17,6 +17,8 @@
     int for_layer[LOOP_DEPTH];  // FOR LABEL
     int while_depth = 0; // WHILE LABEL
     int while_layer[LOOP_DEPTH]; // WHILE LABEL
+    int if_depth = 0; // WHILE LABEL
+    int if_layer[LOOP_DEPTH]; // WHILE LABEL
     int args = 1; // FUNCTION ARGUMENTS COUNTER
     int sq_arg = 0; // ARRAY DIM INDEX
     int sq_subarg = 0; // ARRAY DIM INDEX
@@ -1191,18 +1193,25 @@ argument
 /* BRANCH TO LABEL */
 if_statement
     : helper_if %prec ONLY_IF {
-            printf("l%db:\n", lab_cnt++);
+            printf("l%di1l%d:\n", if_depth, if_layer[if_depth]);
+            if_layer[if_depth]++;
+            if_depth--;
         }
     |  helper_if _ELSE statement {
-            printf("l%db:\n", lab_cnt++);
+            printf("l%di1l%d:\n", if_depth, if_layer[if_depth]);
+            if_layer[if_depth]++;
+            if_depth--;
         }
     ;
 /* HELPER */
 /* LOOP BRANCH AND EXIT LABLE */
 helper_if
-    : _IF _LPAREN condition _RPAREN {printf("beq t1, x0, l%da\n", lab_cnt);} statement {
-            printf("beq x0, x0, l%db\n", lab_cnt); //always branch -- skip else after if is done
-            printf("l%da:\n", lab_cnt);
+    : _IF _LPAREN condition _RPAREN {
+            if_depth++;
+            printf("beq t1, x0, l%di0l%d\n", if_depth, if_layer[if_depth]);
+        } statement {
+            printf("beq x0, x0, l%di1l%d\n", if_depth, if_layer[if_depth]); //always branch -- skip else after if is done
+            printf("l%di0l%d:\n", if_depth, if_layer[if_depth]);
         }
     ;
 /*  IF CONDTITIONS  */
@@ -1339,6 +1348,11 @@ rel_exp
                     printf("ERROR: REL OP ISSUE: wrong operator\n");
                 break;
            }
+        }
+    | num_exp {
+            printf("slt t2, t1, x0\n");
+            printf("slt t3, x0, t1\n");
+            printf("add t1, t2, t3\n");
         }
     ;
 /*    LOOPS    */
@@ -1571,6 +1585,11 @@ int main(){
         while_layer[while_depth] = 0;
     }
     while_depth = 0;
+
+    for(if_depth = 0; if_depth < LOOP_DEPTH; if_depth++){
+        if_layer[if_depth] = 0;
+    }
+    if_depth = 0;
 
     syntax_error = yyparse();
     

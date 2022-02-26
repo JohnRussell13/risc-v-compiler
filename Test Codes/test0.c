@@ -24,9 +24,9 @@
 //     return a;
 // }
 
-void ptr(int *x){
-    *x = 4;
-}
+// void ptr(int *x){
+//     *x = 4;
+// }
 
 int main(){
     int x;
@@ -119,8 +119,27 @@ int main(){
     //     x++;
     // }
 
-    x = 5;
-    ptr(&x);
+    // x = 5;
+    // ptr(&x);
+
+    if(1){
+        if(2){
+            x = 3;
+        }
+    }
+    if(0){
+        x = 7;
+    }
+    if(1){
+        if(1){
+            if(0){
+                x--;
+            }
+        }
+        if(1){
+            x++;
+        }
+    }
 
     //return 0;
 }
