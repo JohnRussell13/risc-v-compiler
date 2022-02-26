@@ -12,7 +12,10 @@
     int warning_count;
     int num_exp_cnt = 0; // not in use now, but needed to make deep nested expresions possible; also needed for rel
     int lab_cnt = 0;
-    int lab_for_cnt = 0;
+    int for_depth = 0;
+    int for_layer[CHAR_BUFFER_LENGTH]; 
+    int while_depth = 0;
+    int while_layer[CHAR_BUFFER_LENGTH]; 
     int func_ind = 0;
     int args = 1;
     int sq_arg = 0;
@@ -21,7 +24,7 @@
     unsigned *dims;
 
     /* SYM_TAB HELPER VARIABLES */
-    char tab_name[SYMBOL_TABLE_LENGTH];
+    char tab_name[LOOP_DEPTH];
     int tab_ind;
     int tab_type;
     int tab_kind;
@@ -378,34 +381,29 @@ assignment_statement
             printf("add t0, x0, t1\n"); // PUT num_exp ON t1
             printf("sw t0, 0, s4\n");
         }
-    | data _ASSIGN _AMP
-        {
+    | data _ASSIGN _AMP {
             printf("add s5, s4, x0\n");
-        }
-        data _SEMICOLON
-        {
+        } data _SEMICOLON {
             printf("add t0, s4, x0\n");
             printf("sw t0, 0, s5\n");
         }
-    | data _ITER _SEMICOLON
-        {
+    | data _ITER _SEMICOLON {
+            printf("lw t0, 0, s4\n");
             if($2 == INC){
                 printf("addi t0, t0, 1\n");
             }
             else{
-                printf("addi t1, x0, 1\n");
-                printf("sub t0, t0, t1\n");
+                printf("addi t0, t0, -1\n");
             }
             printf("sw t0, 0, s4\n");
         }
-    | _ITER data _SEMICOLON
-        {
+    | _ITER data _SEMICOLON {
+            printf("lw t0, 0, s4\n");
             if($1 == INC){
                 printf("addi t0, t0, 1\n");
             }
             else{
-                printf("addi t1, x0, 1\n");
-                printf("sub t0, t0, t1\n");
+                printf("addi t0, t0, -1\n");
             }
             printf("sw t0, 0, s4\n");
         }
@@ -1378,10 +1376,17 @@ return_statement
 /* WHILE STATEMENT */
 /* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) - ??? */
 while_statement
-    : _WHILE {printf("l%dw:\n", lab_cnt);} _LPAREN condition _RPAREN {printf("beq t1, x0, l%dw\n", lab_cnt+1);}  statement
-        {
-            printf("beq x0, x0, l%dw\n", lab_cnt);
-            printf("l%dw:\n", ++lab_cnt);
+    : _WHILE {
+            while_depth++;
+            printf("l%dw0l%d:\n", while_depth, while_layer[while_depth]);
+        } _LPAREN condition _RPAREN {
+            printf("beq t1, x0, l%dw1l%d\n", while_depth, while_layer[while_depth]);
+        } statement {
+            printf("beq x0, x0, l%dw0l%d\n", while_depth, while_layer[while_depth]);
+            printf("l%dw1l%d:\n", while_depth, while_layer[while_depth]);
+
+            while_layer[while_depth]++;
+            while_depth--;
         }
     ;
 /* SWITCH STATEMENT */
@@ -1438,9 +1443,10 @@ do_while_statement
 /* TO BE DELT WITH -- NESTED LABELS */
 for_start
     : _FOR _LPAREN assignment_statement {
-            printf("l%df0:\n", ++lab_for_cnt);
+            for_depth++;
+            printf("l%df0l%d:\n", for_depth, for_layer[for_depth]);
         } condition {
-            printf("beq t1, x0, l%df1\n", lab_for_cnt);
+            printf("beq t1, x0, l%df1l%d\n", for_depth, for_layer[for_depth]);
         } _SEMICOLON
     ;
 
@@ -1452,8 +1458,11 @@ for_statement
             printf("add t0, x0, t1\n"); //PUT num_exp ON t1
             printf("sw t0, 0, s4\n");
 
-            printf("beq x0 x0, l%df0\n", lab_for_cnt);
-            printf("l%df1:\n", lab_for_cnt);
+            printf("beq x0 x0, l%df0l%d\n", for_depth, for_layer[for_depth]);
+            printf("l%df1l%d:\n", for_depth, for_layer[for_depth]);
+
+            for_layer[for_depth]++;
+            for_depth--;
         }
     | for_start data {
             push("s4", 1);
@@ -1468,8 +1477,11 @@ for_statement
             }
             printf("sw t1, 0, s4\n");
 
-            printf("beq x0 x0, l%df0\n", lab_for_cnt);
-            printf("l%df1:\n", lab_for_cnt);
+            printf("beq x0 x0, l%df0l%d\n", for_depth, for_layer[for_depth]);
+            printf("l%df1l%d:\n", for_depth, for_layer[for_depth]);
+
+            for_layer[for_depth]++;
+            for_depth--;
         }
     | for_start {
             push("s4", 1);
@@ -1484,8 +1496,11 @@ for_statement
             }
             printf("sw t0, 0, s4\n");
 
-            printf("beq x0 x0, l%df0\n", lab_for_cnt);
-            printf("l%df1:\n", lab_for_cnt);
+            printf("beq x0 x0, l%df0l%d\n", for_depth, for_layer[for_depth]);
+            printf("l%df1l%d:\n", for_depth, for_layer[for_depth]);
+
+            for_layer[for_depth]++;
+            for_depth--;
         }
     /* | for_start data _ASSIGN _AMP {
             printf("add s5, s4, x0\n");
@@ -1564,6 +1579,17 @@ int main(){
     init_symtab(&head);
     
     printf("jal start\n");
+
+    /* INIT LOOP LABELS */
+    for(for_depth = 0; for_depth < LOOP_DEPTH; for_depth++){
+        for_layer[for_depth] = 0;
+    }
+    for_depth = 0;
+
+    for(while_depth = 0; while_depth < LOOP_DEPTH; while_depth++){
+        while_layer[while_depth] = 0;
+    }
+    while_depth = 0;
 
     syntax_error = yyparse();
     

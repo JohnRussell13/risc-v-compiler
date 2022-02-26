@@ -26,9 +26,9 @@
 
 int main(){
     int x;
-    //int y;
+    int y;
     //int a[5];
-    int b[5][3];
+    // int b[5][3];
     // int z0;
     // int w;
     // int q;
@@ -83,10 +83,37 @@ int main(){
     //     x = x + a[y];
     // }
 
-    for(x=0;x<5;x++){
-        b[x][0] = x;
-        b[x][1] = x+1;
-        b[x][2] = x+2;
+    // for(x=0;x<5;x++){
+    //     b[x][0] = x;
+    //     b[x][1] = x+1;
+    //     b[x][2] = x+2;
+    // }
+
+    // for(x = 0; x < 5; x++){
+    //     for(y = 0; y < 2; y++){
+    //         y = y;
+    //     }
+
+    //     for(y = 0; y < 3; y++){
+    //         y = y;
+    //     }
+    // }
+
+    // for(x = 0; x < 3; x++){
+    //     for(y = 0; y < 4; y++){
+    //         y = y;
+    //     }
+    // }
+
+    x = 0;
+
+    while(x < 5){
+        y = 3;
+        while(y > 0){
+            y--;
+        }
+        x++;
     }
+
     //return 0;
 }
