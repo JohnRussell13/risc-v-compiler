@@ -8,7 +8,7 @@
 
 /* STRUCTURE OF THE SYMBOL TABLE ELEMENTS */
 typedef struct sym_entry{
-	char name[SYMBOL_TABLE_LENGTH]; //name of symbol
+	char name[NAME_LENGTH]; //name of symbol
 	unsigned kind; //type of symbol
 	unsigned type; //type of value of symbol
 	unsigned pointer; //type of value of symbol
@@ -24,8 +24,6 @@ int insert_symbol(SYMBOL_ENTRY **head, char *name, unsigned kind, unsigned type)
 /* FUNCTION FOR SEARCHING FOR SYMBOL IN SYMBOL TABLE */
 int lookup_symbol(SYMBOL_ENTRY **head, char *name);
 int lookup_symbol_func(SYMBOL_ENTRY **head, char *name, unsigned func);
-int lookup_symbol_stack(SYMBOL_ENTRY **head, char *name, unsigned func);
-int lookup_function_size(SYMBOL_ENTRY **head, unsigned ind);
 
 /* MEMORY MAPS */
 int memory_map(SYMBOL_ENTRY **head, char *name, unsigned func);
@@ -46,12 +44,6 @@ unsigned get_pointer(SYMBOL_ENTRY **head, int index);
 /* INDEX OF THE CURRENT FUNCTION */
 unsigned get_func(SYMBOL_ENTRY **head);
 
-unsigned get_param(SYMBOL_ENTRY **head);
-
-/* TOTAL NUMBER OF SYMBOLS */
-unsigned get_total(SYMBOL_ENTRY **head);
-
-
 /* REMOVE SUBTABLE -- DELETES EVERYTHING AFTER begin_index */
 void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index);
 
@@ -60,9 +52,5 @@ void print_symtab(SYMBOL_ENTRY **head);
 
 /* DELETE TABLE -- DELETES EVERYTHING BELOVE head */
 void destroy_list(SYMBOL_ENTRY **head);
-
-/* STACK */
-void push(char *reg, int size);
-void pop(char *reg, int size);
 
 #endif

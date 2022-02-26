@@ -2,43 +2,43 @@
     #include <stdio.h>
     #include "definitions.h"
     #include "symtab.h"
+    #include "stack.h"
 
+    /* FLEX/BISON REQUIRED */
     int yyparse(void);
     int yylex(void);
     int yyerror(char *s);
-    void warning(char *s);
     extern int yylineno;
     int error_count;
-    int warning_count;
-    int num_exp_cnt = 0; // not in use now, but needed to make deep nested expresions possible; also needed for rel
-    int lab_cnt = 0;
-    int for_depth = 0;
-    int for_layer[CHAR_BUFFER_LENGTH]; 
-    int while_depth = 0;
-    int while_layer[CHAR_BUFFER_LENGTH]; 
-    int func_ind = 0;
-    int args = 1;
-    int sq_arg = 0;
-    int sq_subarg = 0;
-    int sq_mul = 0;
-    unsigned *dims;
+
+    /* USED VARIABLES */
+    int lab_cnt = 0; // LABEL COUNTER
+    int for_depth = 0; // FOR LABEL
+    int for_layer[LOOP_DEPTH];  // FOR LABEL
+    int while_depth = 0; // WHILE LABEL
+    int while_layer[LOOP_DEPTH]; // WHILE LABEL
+    int args = 1; // FUNCTION ARGUMENTS COUNTER
+    int sq_arg = 0; // ARRAY DIM INDEX
+    int sq_subarg = 0; // ARRAY DIM INDEX
+    int sq_mul = 0; // ARRAY DIM PRODUCT
+    unsigned sq_size; // ARRAY SIZE
+    unsigned *dims; // ARRAY
 
     /* SYM_TAB HELPER VARIABLES */
     char tab_name[LOOP_DEPTH];
-    int tab_ind;
-    int tab_type;
-    int tab_kind;
-    unsigned tab_array_count;
-    SYMBOL_ENTRY *head;
+    int tab_ind; // INDEX
+    int tab_type; // TYPE
+    int tab_kind; // KIND
+    int func_ind = 0; // FUNCTION INDEX
+    SYMBOL_ENTRY *head; // TABLE POINTER
 %}
 
 /* POSSIBLE TYPES */
 %union {
     int i;
     char *s;
-    int pp[2];
-    int ppp[3];
-    enum ops a;
+    int ii[2];
+    int iii[3];
     unsigned d[MAX_DIM];
 }
 
@@ -98,12 +98,9 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type literal data function_call // index
-%type <pp> possible_pointer // index AND is it new
-%type <a> ar_op log_op helper_num_exp helper_cond helper_cond_simp // operation
-%type <i> array_param // value?
-%type <pp> exp // index AND which rule
-%type <ppp> helper_exp // index, which rule AND which op
+%type <i> type literal data function_call ar_op log_op helper_num_exp helper_cond helper_cond_simp
+%type <ii> symbol exp
+%type <iii> helper_exp
 %type <d> array_member_definition
 
 /* SPECIAL RULES */
@@ -113,17 +110,34 @@
 %start program
 
 %%
+/*
+*   USED REGS:
+*       ra  -  RETURN ADDRESS FOR JUMPING BACK FROM FUNCTION
+*       sp  -  STACK POINTER
+*       t0  -  FOR MEMORY STORE
+*       t1  -  FOR VALUE OF SOME NUMERICAL EXPRESSION
+*       tn  -  TEMP REGS
+*       s0  -  FUNCTION RETURN VALUE LOCATION
+*       sn  -  TEMP REGS FOR ARRAY MANIPULATION
+*       s4  -  SYMBOL POINTER
+*       s5  -  TEMP REG FOR POINTER ASSIGNMENT
+*       an  -  TEMP REG FOR ARRAY DIMENSIONS
+*       s11 -  NEXT CALLED FUNCTION MEMORY BEGINING
+*       tp  -  CURRENT FUNCTION MEMORY BEGINING
+*       gp  -  CURRENT FUNCTION MEMORY SIZE
+*/
 
-/* SYMBOL TABLE AFTER MAIN IS MAPPED DIRECTLY TO THE DATA MEMORY */
-/* WE MUST CLEAR SYM_TAB AFTER END OF A FUNCTION IN ORDER TO ALLOW NAME RECYCLING */
-/* WHEN WE CALL THE FUNCTION, WE MUST ADD DATA TO THE TOP OF THE DATA MEMORY */
-/* ONLY variable AND assignment CAN CHANGE THE DATA MEMORY (LWI SWI) */
+/*
+*   MEMORY STRUCTURE:
+*       tp + 0   -  RETURN ADDRESS
+*       tp + 4*n -  DATA
+*       tp + gp  -  FUNCTION MEMORY SIZE
+*/
 
-/* WHOLE PROGRAM */
-/* INIT SYM_TAB */
+/*    WHOLE PROGRAM    */
+/* INITIAL REGS CONFIG */
 program
-    : function_list
-        {
+    : function_list {
             printf("start:\n");
             printf("jal count\n");
             printf("count:\n");
@@ -135,17 +149,16 @@ program
             //print_symtab(&head);
         }
     ;
-/* LIST OF FUNCTIONS -- RECURSIVE RULE */
-/* NO ACTION */
+/*  LIST OF FUNCTIONS  */
+/* RECURSION */
 function_list
     : function
     | function_list function
     ;
-/* FUNCTION DEFINITION */
-/* CHECK IF THE NAME IS FREE AND ADD IT TO THE SYM_TAB; CHECK  */
+/*    FUNCTION DEFINITION    */
+/* CHECK IF NAME IS FREE, ADD TO SYM_TAB AND JUMP BACK */
 function
-    : type _ID
-        {
+    : type _ID {
             tab_ind = lookup_symbol(&head, $2);
             if(tab_ind == -1){
                 tab_ind = insert_symbol(&head, $2, FUN, $1);
@@ -153,58 +166,42 @@ function
             else{
                 printf("ERROR: redefinition of a function '%s'\n", $2);
             }
-
-        }
-        _LPAREN parameter_list _RPAREN 
-        {
+        } _LPAREN parameter_list _RPAREN {
             printf("%s:\n", $2);
             printf("sw ra, 0, tp\n"); //save where to return
             printf("sw gp, -4, s11\n"); //save data size of parent function
-        } 
-        body
-        {
-            //tab_ind = lookup_symbol(&head, $2);
-            //tab_ind = get_param(&head);
-            //printf("%d\n", tab_ind);
-            //print_symtab(&head);
-
-            //clear_symbols(&head, tab_ind+1); // CLEAR PARAMS
-
+        } body {
             printf("jalr ra\n");
         }
     ;
-/* NUMBER */
-/* RETURN THE VALUE OF A GIVEN NUMBER */
+/*  NUMBER  */
+/* RETURN INDEX AND IS IT NEW */
 literal
-    : _INT_NUMBER
-        {
+    : _INT_NUMBER {
             tab_ind = insert_symbol(&head, $1, LIT, INT);
             $$ = tab_ind;
         }
-    | _UINT_NUMBER
-        {
+    | _UINT_NUMBER {
             tab_ind = insert_symbol(&head, $1, LIT, UINT);
             $$ = tab_ind;
         }
-    | _HEX_NUMBER
-        {
+    | _HEX_NUMBER {
             tab_ind = insert_symbol(&head, $1, LIT, HEX_NUMBER);
             $$ = tab_ind;
         }
     ;
 /* TYPE */
-/* RETURN TYPE */ /* MAYBE EXPAND WITH CONST */
+/* RETURN TYPE */ 
+/* MAYBE EXPAND WITH CONST? */
 type
-    : _TYPE
-        {
+    : _TYPE {
             $$ = $1;
         }
     ;
-/* ID OF SOME PAR OR VAR */
+/*    ID OF SOME PAR OR VAR    */
 /* RETURN INDEX AND IS IT NEW */
-possible_pointer
-    : _ID
-        {
+symbol
+    : _ID {
             strcpy(tab_name, $1);
             func_ind = get_func(&head);
             tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
@@ -219,8 +216,7 @@ possible_pointer
                 $$[1] = 0;
             }
         }
-    | _STAR _ID
-        {
+    | _STAR _ID {
             strcpy(tab_name, $2);
             func_ind = get_func(&head);
             tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
@@ -236,16 +232,14 @@ possible_pointer
             }
         }
     ;
-/* NO PARAMETERS OR LIST OF FUNCTIONS PARAMETERS */
-/* NO ACTION */
+/*  NO PARAMETERS OR LIST OF FUNCTIONS PARAMETERS  */
 parameter_list
     : /* empty */
     | parameter
-/* LIST OF FUNCTIONS PARAMETERS */
-/* CHEK IF THE NAME IS FREE AND MAKE A NEW SYM_TAB ENTRY */
+/*  LIST OF FUNCTIONS PARAMETERS  */
+/* RECURSION, CHEK IF NAME IS FREE AND MAKE NEW SYM_TAB ENTRY */
 parameter
-    : parameter _COMMA type possible_pointer
-        {
+    : parameter _COMMA type symbol {
             func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $4[0] + func_ind));
             if($4[1]){
@@ -256,8 +250,7 @@ parameter
                 printf("ERROR: PARAM ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
         }
-    | type possible_pointer
-        {
+    | type symbol {
             func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $2[0] + func_ind));
             if($1 == VOID){
@@ -272,22 +265,20 @@ parameter
             }
         }
     ;
-/* BODY OF A FUNCTION */
-/* NO ACTION */
+/*    BODY OF A FUNCTION    */
 body
     : _LBRACKET variable_list statement_list _RBRACKET
     ;
-/* LIST OF VARIABLE DECLARATIONS */
-/* NO ACTION */
+/*  LIST OF VARIABLE DECLARATIONS  */
+/* RECURSION */
 variable_list
     : /* empty */
     | variable_list variable
     ;
-/* VARIABLE DECLARATION */ /* MAYBE ADD DEFINTIONS AS WELL -- int x = 5; */
-/* CHEK IF THE NAME IS FREE AND MAKE A NEW SYM_TAB ENTRY */
+/*    VARIABLE DECLARATION    */
+/* CHEK IF NAME IS FREE AND MAKE NEW SYM_TAB ENTRY */
 variable
-    : type possible_pointer _SEMICOLON
-        {
+    : type symbol _SEMICOLON {
             func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $2[0] + func_ind));
             if($1 == VOID){
@@ -301,8 +292,7 @@ variable
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
         }
-    | type possible_pointer array_member_definition _SEMICOLON
-        {
+    | type symbol array_member_definition _SEMICOLON {
             func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $2[0] + func_ind));
             if($2[1]){
@@ -313,41 +303,32 @@ variable
                 printf("ERROR: VAR DECL ISSUE: redefinition of a ID '%s'\n", tab_name);
             }
             func_ind = get_func(&head);
-            set_dimension(&head, $2[0] + func_ind, $3, tab_array_count);
+            set_dimension(&head, $2[0] + func_ind, $3, sq_size);
         }
     ;
-/* ARRAY PART IN A DECLARATION */
-/* ARRAYS SHOULD BE DEALT WITH -- LAST [] IS THE DIM = 0 */
+/*  ARRAY PART IN A DECLARATION  */
+/* RETURN DIMENSIONS */
 array_member_definition
-    : array_member_definition _LSQBRACK array_param _RSQBRACK
+    : array_member_definition _LSQBRACK literal _RSQBRACK
         {
-            if(tab_array_count >= MAX_DIM){
+            if(sq_size >= MAX_DIM){
                 printf("ERROR: ARRAY SIZE ISSUE: too many dimensions\n");
             }
-            $$[tab_array_count++] = $3;
+            $$[sq_size++] = atoi(get_name(&head, $3));
         }
-    | _LSQBRACK array_param _RSQBRACK
+    | _LSQBRACK literal _RSQBRACK
         {
-            tab_array_count = 0;
-            $$[tab_array_count++] = $2;
+            sq_size = 0;
+            $$[sq_size++] = atoi(get_name(&head, $2));
         }
     ;
-/* ALLOWED PARAMETERS TYPES OF AN ARRAY */
-/* ARRAYS SHOULD BE DEALT WITH */ /* MAYBE ADD MACRO */
-array_param
-    : literal
-        {
-            $$ = atoi(get_name(&head, $1));
-        }
-    ;
-/* LIST OF STATEMENTS */
-/* NO ACTION */
+/*  LIST OF STATEMENTS  */
+/* RECURSION */
 statement_list
     : /* empty */
     | statement_list statement
     ;
-/* POSSIBLE STATEMENTS -- NO RETURN VALUE */
-/* NO ACTION */
+/*    POSSIBLE STATEMENTS    */
 statement
     : compound_statement
     | assignment_statement
@@ -362,21 +343,18 @@ statement
 //    | do_while_statement
 //    | switch_statement
 
-/* COMPOUND STATMENT -- {} BLOCK */
-/* NO ACTION */
+/*    COMPOUND STATMENT    */
 compound_statement
     : _LBRACKET statement_list _RBRACKET
     ;
-/* ASSIGNMENT -- x = 5;*/
-/* PRINT ASSEMBLY CODE */
-/* TO BE DELT WITH -- VAR vs PAR */
+/*    ASSIGNMENT    */
+/* SAVE IN MEMORY */
+/* TO DO -- VAR vs PAR */
 assignment_statement
-    : data _ASSIGN
-        {
+    : data _ASSIGN {
             push("s4", 1);
         }
-        num_exp _SEMICOLON
-        {
+        num_exp _SEMICOLON {
             pop("s4", 1);
             printf("add t0, x0, t1\n"); // PUT num_exp ON t1
             printf("sw t0, 0, s4\n");
@@ -408,11 +386,10 @@ assignment_statement
             printf("sw t0, 0, s4\n");
         }
     ;
-/* possible_pointer OR array of possible_pointer */
-/* USED AS MEMORY MAP */
-/* CHECK IF IT EXISTS AND RETURN ITS INDEX */ /* ASSING, NUM_EXP, EXP, FOR */
+/*  MEMORY MAP  */
+/* CHECK IF EXISTS AND RETURN ITS MEMORY_MAP */
 data
-    : possible_pointer
+    : symbol
         {
             func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $1[0] + func_ind));
@@ -427,7 +404,7 @@ data
 
             printf("addi s4, tp, %d\n", memory_map(&head, tab_name, func_ind));
         }
-    | possible_pointer array_member
+    | symbol array_member
         {
             func_ind = get_func(&head);
             strcpy(tab_name, get_name(&head, $1[0] + func_ind));
@@ -479,82 +456,67 @@ data
 
         }
     ;
-/* ARRAY PARAMETERS */
-/* PRINT ASSEMBLY CODE */ /* BE CAREFULL WITH function_call MUSN'T BE VOID*/
+/*  ARRAY PARAMETERS  */
+/* STORE IN a LOCATION */
+/* TO DO -- BE CAREFULL WITH function_call: MUSN'T BE VOID*/
 array_member
-    : array_member _LSQBRACK num_exp _RSQBRACK
-        {
+    : array_member _LSQBRACK num_exp _RSQBRACK {
             sq_arg++;
             printf("add a%d, t1, x0\n", sq_arg);
         }
-    | _LSQBRACK num_exp _RSQBRACK
-        {
+    | _LSQBRACK num_exp _RSQBRACK {
             sq_arg = 0;
             printf("add a%d, t1, x0\n", sq_arg);
         }
     ;
-/* ARITHMETICAL OPERATIONS */
-/* RETURN WHAT OPERATION IS USED */
+/*  ARITHMETICAL OPERATIONS  */
+/* RETURN OPERATION TYPE */
 ar_op
-    : _PLUS
-        {
+    : _PLUS {
             $$ = PLUS;
         }
-    | _MINUS
-        {
+    | _MINUS {
             $$ = MINUS;
         }
-    | _STAR
-        {
+    | _STAR {
             $$ = STAR;
         }
-    | _DIV
-        {
+    | _DIV {
             $$ = DIV;
         }
-    | _MOD
-        {
+    | _MOD {
             $$ = MOD;
         }
-    | _SR
-        {
+    | _SR {
             $$ = SR;
         }
-    | _SL
-        {
+    | _SL {
             $$ = SL;
         }
-    | _AMP
-        {
+    | _AMP {
             $$ = AMP;
         }
-    | _BOR
-        {
+    | _BOR {
             $$ = BOR;
         }
-    | _BXOR
-        {
+    | _BXOR {
             $$ = BXOR;
         }
     ;
-/* LOGIAL OPERATION */
-/* RETURN WHAT OPERATION IS USED */
+/*  LOGIAL OPERATION  */
+/* RETURN OPERATION TYPE */
 log_op
-    : _AND
-        {
+    : _AND {
             $$ = AND;
         }
-    | _OR
-        {
+    | _OR {
             $$ = OR;
         }
     ;
-/* NUMERICAL EXPRESSION -- (x+7)*sq(3) */
-/* PRINT ASSEMBLY CODE BY STORING THE INTERMEDIATE RESULTS */
-/* RESULTS ARE KEPT IN t1 AND t2 */
+/*  NUMERICAL EXPRESSION  */
+/* PUT RESULT IN t1 */
 num_exp
-    : exp
-        {
+    : exp {
             switch($1[1]){
                 case 0:
                     printf("addi t1, x0, %d\n", $1[0]);
@@ -563,13 +525,11 @@ num_exp
                     printf("lw t1, 0, s4\n");
                     break;
                 case 2:
-                    /* DEAL WITH FUNCTION RETURN */
                     printf("lw t1, 0, s0\n");
                     break;
             }
         }
-    | helper_exp exp
-        {
+    | helper_exp exp {
             switch($2[1]){
                 case 0:
                     printf("addi t2, x0, %d\n", $2[0]);
@@ -578,7 +538,6 @@ num_exp
                     printf("lw t2, 0, s4\n");
                     break;
                 case 2:
-                    /* DEAL WITH FUNCTION RETURN */
                     printf("lw t2, 0, s0\n");
                     break;
             }
@@ -591,7 +550,6 @@ num_exp
                     printf("lw t1, 0, s4\n");
                     break;
                 case 2:
-                    /* DEAL WITH FUNCTION RETURN */
                     pop("s0", 1);
                     printf("lw t1, 0, s0\n");
                     break;
@@ -605,7 +563,6 @@ num_exp
                     break;
                 case STAR:
                     // should use MUL and DIV which are in RISC-V
-
                     printf("addi t3, x0, 0\n");
                     printf("blt t2, x0, l%dm2\n", lab_cnt);
                     printf("l%dm:\n", lab_cnt);
@@ -623,7 +580,6 @@ num_exp
 
                     break;
                 case DIV:
-                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -648,7 +604,6 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case MOD:
-                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -673,11 +628,9 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case SR:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("srl t1, t1, t2\n");
                     break;
                 case SL:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("sll t1, t1, t2\n");
                     break;
                 case AMP:
@@ -694,8 +647,7 @@ num_exp
                     break;
             }
         }
-    | helper_exp _LPAREN num_exp _RPAREN
-        {
+    | helper_exp _LPAREN num_exp _RPAREN {
             printf("add t2, x0, t1\n");
             switch($1[1]){
                 case 0:
@@ -718,8 +670,6 @@ num_exp
                     printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    //printf("mul t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
-
                     printf("addi t3, x0, 0\n");
                     printf("blt t2, x0, l%dm2\n", lab_cnt);
                     printf("l%dm:\n", lab_cnt);
@@ -736,7 +686,6 @@ num_exp
                     printf("add t1, t3, x0\n");
                     break;
                 case DIV:
-                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -761,7 +710,6 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case MOD:
-                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -786,11 +734,9 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case SR:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("srl t1, t1, t2\n");
                     break;
                 case SL:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("sll t1, t1, t2\n");
                     break;
                 case AMP:
@@ -807,8 +753,7 @@ num_exp
                     break;
             }
         }
-    | helper_num_exp exp
-        {
+    | helper_num_exp exp {
             pop("t1", 1);
             switch($2[1]){
                 case 0:
@@ -829,8 +774,6 @@ num_exp
                     printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    //printf("mul t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
-
                     printf("addi t3, x0, 0\n");
                     printf("blt t2, x0, l%dm2\n", lab_cnt);
                     printf("l%dm:\n", lab_cnt);
@@ -847,7 +790,6 @@ num_exp
                     printf("add t1, t3, x0\n");
                     break;
                 case DIV:
-                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -872,7 +814,6 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case MOD:
-                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -897,11 +838,9 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case SR:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("srl t1, t1, t2\n");
                     break;
                 case SL:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("sll t1, t1, t2\n");
                     break;
                 case AMP:
@@ -918,8 +857,7 @@ num_exp
                     break;
             }
         }
-    | helper_num_exp _LPAREN num_exp _RPAREN
-        {
+    | helper_num_exp _LPAREN num_exp _RPAREN {
             printf("add t2, x0, t1\n");
             pop("t1", 1);
             switch($1){
@@ -930,8 +868,6 @@ num_exp
                     printf("sub t1, t1, t2\n");
                     break;
                 case STAR:
-                    //printf("mul t1, t1, t2\n"); //IMPLEMENT MULTIPLICATION
-
                     printf("addi t3, x0, 0\n");
                     printf("blt t2, x0, l%dm2\n", lab_cnt);
                     printf("l%dm:\n", lab_cnt);
@@ -948,7 +884,6 @@ num_exp
                     printf("add t1, t3, x0\n");
                     break;
                 case DIV:
-                    //printf("ERROR: NUM EXPR ISSUE: dividing with zero\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -973,7 +908,6 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case MOD:
-                    //printf("ERROR: NUM EXPR ISSUE: modular with a negative\n");
                     printf("beq t2, x0, end\n"); //error
 
                     printf("addi t4, x0, -1\n");
@@ -998,11 +932,9 @@ num_exp
                     printf("l%dd5:\n", lab_cnt++);
                     break;
                 case SR:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("srl t1, t1, t2\n");
                     break;
                 case SL:
-                    //printf("ERROR: NUM EXPR ISSUE: shifting with a negative\n");
                     printf("sll t1, t1, t2\n");
                     break;
                 case AMP:
@@ -1019,8 +951,7 @@ num_exp
                     break;
             }
         }
-    | _PLUS exp /* ONLY FOR +- IN CASE OF -5 */
-        {
+    | _PLUS exp {
             switch($2[1]){
                 case 0:
                     printf("addi t1, x0, %d\n", $2[0]);
@@ -1033,8 +964,7 @@ num_exp
                     break;
             }
         }
-    | _MINUS exp /* ONLY FOR +- IN CASE OF -5 */
-        {
+    | _MINUS exp {
             switch($2[1]){
                 case 0:
                     printf("addi t1, x0, %d\n", $2[0]);
@@ -1048,8 +978,7 @@ num_exp
             }
             printf("sub t1, x0, t1\n");
         }
-    | data _ITER
-        {
+    | data _ITER {
             printf("lw t1, 0, s4\n");
             if($2 == INC){
                 printf("addi t2, t1, 1\n");
@@ -1059,8 +988,7 @@ num_exp
             }
             printf("sw t2, 0, s4\n");
         }
-    | _ITER data
-        {
+    | _ITER data {
             printf("lw t1, 0, s4\n");
             if($1 == INC){
                 printf("addi t1, t1, 1\n");
@@ -1072,10 +1000,9 @@ num_exp
         }
     ;
 /* HELPER */
-/* put on stack s4 and s0 */
+/* PUT ON STACK INDEX */
 helper_exp
-    : exp ar_op
-        {
+    : exp ar_op {
             switch($1[1]){
                 case 1:
                     push("s4", 1);
@@ -1091,25 +1018,21 @@ helper_exp
         }
     ;
 /* HELPER */
-/* copy t1 into t3, which will go to t2 when there are two num_exp */
+/* PUSH ON STACK */
 helper_num_exp
-    : _LPAREN num_exp _RPAREN ar_op
-        {
+    : _LPAREN num_exp _RPAREN ar_op {
             push("t1", 1);
             $$ = $4;
         }
     ;
-/* ALLOWED PARTS OF num_exp */
-/* RETURN THE INDEX */
+/* ALLOWED ELEMENTS OF num_exp */
+/* CHECK FORN TYPE AND RETURN VALUE/INDEX AND TYPE */
 exp
-    : literal
-        {
+    : literal {
             $$[0] = atoi(get_name(&head, $1));
             $$[1] = 0;
         }
-    | data
-        {
-            /*!!! custom map() sym_tab -> memory location !!!*/
+    | data {
             tab_kind = get_kind(&head, $1);
             if(tab_kind != VAR && tab_kind != PAR){
                 printf("ERROR: EXPRESSION ISSUE: no value of a non-VAR and non-PAR kind\n");
@@ -1117,9 +1040,7 @@ exp
             $$[0] = $1;
             $$[1] = 1;
         }
-    | function_call
-        {
-            /*!!! custom map() sym_tab -> label !!!*/
+    | function_call {
             tab_kind = get_kind(&head, $1);
             if(tab_kind == VOID){
                 printf("ERROR: FUNC CALL ISSUE: no return value of a void kind\n");
@@ -1128,24 +1049,18 @@ exp
             $$[1] = 2;
         }
     ;
-/* FUNCTION CALL (THAT RETURNS A VALUE -- INSIDE A num_exp) */
-/* CHECK IF EXISTING FUNC IS CALLED AND RETURN ITS INDEX */
+/*    FUNCTION CALL    */
+/* CHECK IF EXISTS, CONTEXT SWITCH, JUMP AND RETURN */
 function_call
-    : _ID _LPAREN argument_list _RPAREN /* possible_pointer */
-        {
+    : _ID _LPAREN argument_list _RPAREN { /* symbol */
             args = 1;
-            /* CAREFULL WITH x1 (ra) */
             tab_ind = lookup_symbol(&head, $1);
             if(tab_ind == -1){ // CHECK IF OFF BY ONE
                 printf("ERROR: FUNC CALL ISSUE: non-existing ID '%s'\n", $1);
             }
 
             /* SET NEW INFO */
-            //gp stores parent (current) function data size (stack depth)
-            //tp stores grandparent function begining
-            //s11 stores child function begining
             printf("add tp, tp, gp\n"); //update current function begining
-            //printf("add s10, gp, x0\n"); //temp
             printf("addi gp, x0, %d\n", function_map(&head, tab_ind)); //update current size
             printf("add s11, s11, gp\n"); //update child's beginig
 
@@ -1155,61 +1070,56 @@ function_call
 
             printf("sub s11, s11, gp\n"); //update child's beginig
             printf("lw gp, -4, s11\n");
-            //printf("add gp, s10, x0\n"); //update current size
             printf("sub tp, tp, gp\n"); //update current function begining
 
             printf("lw ra, 0, tp\n");
         }
     ;
 /* ARGUMENTS OF A FUNCTION CALL */
-/* NO ACTION */
+/* RECURSION */
 argument_list
     : /* empty */
     | argument
     ;
 /* ARGUMENTS OF A FUNCTION CALL */
+/* SAVE TO MEMORY*/
 argument
-    : argument _COMMA num_exp
-        {
+    : argument _COMMA num_exp {
             printf("sw t1, %d, s11\n", 4*args);
             args++;
         }
-    | num_exp
-        {
+    | num_exp {
             printf("sw t1, %d, s11\n", 4*args);
             args++;
         }
     ;
-/* IF STATEMENT */
-/* PRINT ALL jmps */
+/*    IF STATEMENT    */
+/* BRANCH TO LABEL */
 if_statement
-    : helper_if %prec ONLY_IF
-        {
+    : helper_if %prec ONLY_IF {
             printf("l%db:\n", lab_cnt++);
         }
-    |  helper_if _ELSE statement
-        {
+    |  helper_if _ELSE statement {
             printf("l%db:\n", lab_cnt++);
         }
     ;
 /* HELPER */
-/* AS BEFORE */
+/* LOOP BRANCH AND EXIT LABLE */
 helper_if
-    : _IF _LPAREN condition _RPAREN {printf("beq t1, x0, l%da\n", lab_cnt);} statement
-        {
+    : _IF _LPAREN condition _RPAREN {printf("beq t1, x0, l%da\n", lab_cnt);} statement {
             printf("beq x0, x0, l%db\n", lab_cnt); //always branch -- skip else after if is done
             printf("l%da:\n", lab_cnt);
         }
     ;
-/* IF CONDTITIONS */
+/*  IF CONDTITIONS  */
 condition
     : rel_exp
     | cond_cplx
     ;
-
+/* MORE THAN ONE CONDITION */
+/* SET t1 TO 1 OR 0, DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 cond_cplx
-    : helper_cond_simp rel_exp
-        {
+    : helper_cond_simp rel_exp {
             printf("addi t2, t1, x0\n");
             printf("addi t1, t3, x0\n");
             switch($1){
@@ -1224,8 +1134,7 @@ cond_cplx
                     break;
             }
         }
-    | helper_cond_simp _LPAREN cond_cplx _RPAREN
-        {
+    | helper_cond_simp _LPAREN cond_cplx _RPAREN {
             printf("addi t2, t1, x0\n");
             printf("addi t1, t3, x0\n");
             switch($1){
@@ -1240,8 +1149,7 @@ cond_cplx
                     break;
             }
         }
-    | helper_cond rel_exp
-        {
+    | helper_cond rel_exp {
             printf("addi t2, t1, x0\n");
             printf("addi t1, t3, x0\n");
             switch($1){
@@ -1256,8 +1164,7 @@ cond_cplx
                     break;
             }
         }
-    | helper_cond _LPAREN cond_cplx _RPAREN
-        {
+    | helper_cond _LPAREN cond_cplx _RPAREN {
             printf("addi t2, t1, x0\n");
             printf("addi t1, t3, x0\n");
             switch($1){
@@ -1273,29 +1180,28 @@ cond_cplx
             }
         }
     ;
-/* HELPER */
-/* AS BEFORE */
+/*  HELPER  */
+/* STORE IN TEMP REG */
 helper_cond_simp
-    : rel_exp log_op
-        {
+    : rel_exp log_op {
             printf("addi t3, t1, x0\n");
             $$ = $2;
         } 
     ;
-/* HELPER */
-/* AS BEFORE */
+/*  HELPER  */
+/* STORE IN TEMP REG */
 helper_cond
-    : _LPAREN cond_cplx _RPAREN log_op
-        {
+    : _LPAREN cond_cplx _RPAREN log_op {
             printf("addi t3, t1, x0\n");
             $$ = $4;
         }
     ;
-/* REALATIONAL EXPRESSION */
-/* PRINT ASSEMBLY CODE 1 OR 0 IN t1 DEPENDING ON THE OUTCOME OF THE EXPRESSION */
+/*   REALATIONAL EXPRESSION   */
+/* SET t1 TO 1 OR 0, DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 rel_exp
-    : num_exp _RELOP {printf("add t4, x0, t1\n");} num_exp
-        {
+    : num_exp _RELOP {
+            printf("add t4, x0, t1\n");
+        } num_exp {
             printf("add t2, x0, t1\n");
             printf("add t1, x0, t4\n");
             switch($2){
@@ -1341,40 +1247,8 @@ rel_exp
            }
         }
     ;
-/* RETURN STATMENT -- EITHER retur x; OR return; */
-/* CHECK IF RETURN TYPE IS CORRECT AND SET THE VALUE OF A FUNCTION */
-return_statement
-    : _RETURN num_exp _SEMICOLON
-        {
-            /* WRITE VAL TO THE REGISTER/DATA MEMORY JUMP BACK */
-            tab_ind = get_func(&head);
-            tab_type = get_type(&head, tab_ind);
-            if(tab_type == VOID){
-                printf("ERROR: RETURN ISSUE: value in a void type\n");
-            }
-            // printf("add s0, tp, gp\n");
-            // printf("addi s0, s0, -8\n");
-            // printf("sw t1, 0, s0\n");
-
-            printf("addi s0, tp, 4\n");
-            printf("sw t1, 0, s0\n");
-
-            printf("jalr ra\n");
-        }
-    | _RETURN _SEMICOLON /* FOR VOID ONLY */
-        {
-            /* JUMP BACK */
-            tab_ind = get_func(&head);
-            tab_type = get_type(&head, tab_ind);
-            if(tab_type != VOID){
-                printf("ERROR: RETURN ISSUE: missing value in non-void type\n");
-            }
-
-            printf("jalr ra\n");
-        }
-    ;
-/* WHILE STATEMENT */
-/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) - ??? */
+/*    LOOPS    */
+/*  WHILE STATEMENT  */
 while_statement
     : _WHILE {
             while_depth++;
@@ -1389,58 +1263,8 @@ while_statement
             while_depth--;
         }
     ;
-/* SWITCH STATEMENT */
-/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
-/*
-switch_statement
-    : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
-        {
-        }
-    ;
-*/
-/* LIST OF CASES */
-/* TO BE DELT WITH */
-/*
-case_list
-    : case_list case_statement
-    | case_statement
-    ;
-*/
-/* CASE STATEMENT */
-/* TO BE DELT WITH */ /* ALLOW ONLY ONE default */
-/*
-case_statement
-    : _CASE num_exp _COLON case_block
-    | _DEFAULT _COLON case_block
-    ;
-*/
-/* LIST OF ALLOWED STATEMENTS INSIDE A CASE BLOCK */
-/* TO BE DELT WITH */
-/*
-case_block
-    : case_block case_state
-    | case_state
-    ;
-*/
-/* ALLOWED STATEMENTS INSIDE A CASE BLOCK */
-/* TO BE DELT WITH */
-/*
-case_state
-    : assignment_statement
-    | function_call _SEMICOLON // FOR VOID FUNCTIONS
-    | _CONTINUE _SEMICOLON
-    | _BREAK _SEMICOLON
-    ;
-*/
-/* DO WHILE STATEMENT */
-/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
-/*
-do_while_statement
-    : _DO statement _WHILE _LPAREN condition _RPAREN _SEMICOLON
-    ;
-*/
-/* FOR STATEMENT */
-/* TO BE DELT WITH -- NESTED LABELS */
+/*  FOR STATEMENT  */
+/* LABLE START AND BRANCH */
 for_start
     : _FOR _LPAREN assignment_statement {
             for_depth++;
@@ -1449,7 +1273,7 @@ for_start
             printf("beq t1, x0, l%df1l%d\n", for_depth, for_layer[for_depth]);
         } _SEMICOLON
     ;
-
+/* ASSIGN, EXECUTE, BRANCH AND LABEL EXIT */
 for_statement 
     : for_start data _ASSIGN {
             push("s4", 1);
@@ -1502,17 +1326,84 @@ for_statement
             for_layer[for_depth]++;
             for_depth--;
         }
-    /* | for_start data _ASSIGN _AMP {
-            printf("add s5, s4, x0\n");
-        } data _RPAREN statement {
-            printf("add t0, s4, x0\n");
-            printf("sw t0, 0, s5\n");
+    ;
+/*    RETURN STATMENT    */ 
+/* EITHER retur x; OR return; */
+/* CHECK TYPE, SET THE VALUE AND JUMP */
+return_statement
+    : _RETURN num_exp _SEMICOLON {
+            tab_ind = get_func(&head);
+            tab_type = get_type(&head, tab_ind);
+            if(tab_type == VOID){
+                printf("ERROR: RETURN ISSUE: value in a void type\n");
+            }
+            /* WRITE VAL TO THE REGISTER/DATA MEMORY JUMP BACK */
+            printf("addi s0, tp, 4\n");
+            printf("sw t1, 0, s0\n");
 
-            printf("beq x0 x0, l%df\n", lab_for_cnt);
-            printf("l%df:\n", ++lab_for_cnt);
-        } */
+            printf("jalr ra\n");
+        }
+    | _RETURN _SEMICOLON { /* FOR VOID ONLY */
+            tab_ind = get_func(&head);
+            tab_type = get_type(&head, tab_ind);
+            if(tab_type != VOID){
+                printf("ERROR: RETURN ISSUE: missing value in non-void type\n");
+            }
+
+            printf("jalr ra\n"); /* JUMP BACK */
+        }
     ;
 
+/* TO BE ADDED */
+
+/* SWITCH STATEMENT */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
+/*
+switch_statement
+    : _SWITCH _LPAREN num_exp _RPAREN _LBRACKET case_list _RBRACKET
+    ;
+*/
+/* LIST OF CASES */
+/* TO BE DELT WITH */
+/*
+case_list
+    : case_list case_statement
+    | case_statement
+    ;
+*/
+/* CASE STATEMENT */
+/* TO BE DELT WITH */ /* ALLOW ONLY ONE default */
+/*
+case_statement
+    : _CASE num_exp _COLON case_block
+    | _DEFAULT _COLON case_block
+    ;
+*/
+/* LIST OF ALLOWED STATEMENTS INSIDE A CASE BLOCK */
+/* TO BE DELT WITH */
+/*
+case_block
+    : case_block case_state
+    | case_state
+    ;
+*/
+/* ALLOWED STATEMENTS INSIDE A CASE BLOCK */
+/* TO BE DELT WITH */
+/*
+case_state
+    : assignment_statement
+    | function_call _SEMICOLON // FOR VOID FUNCTIONS
+    | _CONTINUE _SEMICOLON
+    | _BREAK _SEMICOLON
+    ;
+*/
+/* DO WHILE STATEMENT */
+/* TO BE DELT WITH -- NO ACTION ON SYM_TAB (ONLY statement CHANGES SYM_TAB) */
+/*
+do_while_statement
+    : _DO statement _WHILE _LPAREN condition _RPAREN _SEMICOLON
+    ;
+*/
 /* SIMPLE ASSIGN STATEMENTS */
 /* TO BE DELT WITH */
 /* change_statement
@@ -1555,6 +1446,7 @@ for_statement
 ++ += -= *= ...
 ++ global var
 ++ MACRO -- USING PREPROCESSOR, MAYBE INSIDE LEXER
+++ ASSING IN DEFINITION
 -- CONST
 -- pointer on a pointer
 -- pointer on a function
@@ -1566,11 +1458,6 @@ int yyerror(char *s){
     fprintf(stderr, "\nline %d: ERROR: %s\n", yylineno, s);
     error_count++;
     return 0;
-}
-
-void warning(char *s){
-	fprintf(stderr,"\nline %d: WARNING: %s\n",yylineno,s);
-	warning_count++;
 }
 int main(){
     int syntax_error;
@@ -1595,12 +1482,7 @@ int main(){
     
     // print_symtab(&head);
     
-    clear_symbols(&head,0);
-    
-    if(warning_count)
-        printf("\n%d warning(s).\n",warning_count);
-    if(error_count)
-        printf("\n%d error(s).\n",error_count);
+    destroy_list(&head);
 
     if(syntax_error)
         return -1;

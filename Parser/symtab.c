@@ -59,61 +59,6 @@ int lookup_symbol_func(SYMBOL_ENTRY **head, char *name, unsigned func){
 	return i;
 }
 
-int lookup_symbol_stack(SYMBOL_ENTRY **head, char *name, unsigned func){
-	int i;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-	for(i = 0; i < func; i++){
-		temp = temp->next;
-	}
-	i = 0;
-	while(1){
-		if(temp == NULL){
-			return -1;
-		}
-		if(strcmp(temp->name, name) == 0){
-			return i;
-		}
-		temp = temp->next;
-		i++;
-	}
-
-	return i;
-}
-
-int lookup_function_size(SYMBOL_ENTRY **head, unsigned ind){
-	int i;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-
-	for(i = 0; i < ind; i++){
-		if(temp == NULL){
-			return -1;
-		}
-		temp = temp->next;
-	}
-	if(temp == NULL){
-		return -1;
-	}
-	
-	i = 0;
-	temp = temp->next;
-	if(temp == NULL){
-		return i;
-	}
-	while(temp->kind != FUN){
-		//if(temp->kind == VAR || temp->kind == PAR){ //simple memory coding is used, so even LIT will have its memory location
-			i++;
-		//}
-		temp = temp->next;
-		if(temp == NULL){
-			return i;
-		}
-	}
-
-	return i;
-}
-
 int lookup_symbol(SYMBOL_ENTRY **head, char *name){
 	int i = 0;
 	SYMBOL_ENTRY *temp;
@@ -331,35 +276,6 @@ unsigned get_func(SYMBOL_ENTRY **head){
 	return j;
 }
 
-unsigned get_param(SYMBOL_ENTRY **head){
-	int i = 0;
-	int j = -1;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-
-	while(temp != NULL){
-		if(temp->kind == PAR || temp->kind == FUN){
-			j = i;
-		}
-		temp = temp->next;
-		i++;
-	}
-	return j;
-}
-
-unsigned get_total(SYMBOL_ENTRY **head){
-	int i = 0;
-	SYMBOL_ENTRY *temp;
-	temp = *head;
-
-	while(temp != NULL){
-		temp = temp->next;
-		i++;
-	}
-	return i;
-}
-
-
 void clear_symbols(SYMBOL_ENTRY **head, unsigned begin_index){
 	int i;
 	SYMBOL_ENTRY **temp;
@@ -402,11 +318,11 @@ void destroy_list(SYMBOL_ENTRY **head){
     }
 }
 
-
 void push(char *reg, int size){
 	printf("sw %s, 0, sp\n", reg);
 	printf("addi sp, sp, -%d\n", 4*size);
 }
+
 void pop(char *reg, int size){
 	printf("addi sp, sp, %d\n", 4*size);
 	printf("lw %s, 0, sp\n", reg);
