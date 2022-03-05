@@ -19,12 +19,15 @@
     int while_layer[LOOP_DEPTH]; // WHILE LABEL
     int if_depth = 0; // WHILE LABEL
     int if_layer[LOOP_DEPTH]; // WHILE LABEL
-    int args = 1; // FUNCTION ARGUMENTS COUNTER
-    int sq_arg = 0; // ARRAY DIM INDEX
+    int args = 1; // FUNCTION ARGUMENTS COUNTE
+    int sq_arg = 0; // ARRAY DIM INDEXR
+    int sq_mem = 0; // ARRAY DIM INDEX
     int sq_subarg = 0; // ARRAY DIM INDEX
     int sq_mul = 0; // ARRAY DIM PRODUCT
     unsigned sq_size; // ARRAY SIZE
     unsigned *dims; // ARRAY
+    int stack[STACK_DEPTH];
+    int sp = 0;
 
     /* SYM_TAB HELPER VARIABLES */
     char tab_name[LOOP_DEPTH];
@@ -100,7 +103,7 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type literal function_call ar_op log_op helper_num_exp helper_cond helper_cond_simp
+%type <i> type literal function_call ar_op log_op helper_num_exp helper_cond helper_cond_simp mem_map data helper_assign
 %type <ii> exp
 %type <iii> helper_exp
 %type <d> array_member_definition
@@ -119,6 +122,8 @@
 *       t0  -  FOR MEMORY STORE
 *       t1  -  FOR VALUE OF SOME NUMERICAL EXPRESSION
 *       tn  -  TEMP REGS
+*       t5  -  ARRAY DIMENSION SIZE
+*       t6  -  MAIN START
 *       s0  -  FUNCTION RETURN VALUE LOCATION
 *       sn  -  TEMP REGS FOR ARRAY MANIPULATION
 *       s4  -  SYMBOL POINTER
@@ -144,11 +149,12 @@ program
             printf("jal count\n");
             printf("count:\n");
             printf("addi gp, x0, %d\n", function_map(&head, lookup_symbol(&head, "main")));
-            printf("addi tp, ra, 20\n"); //these lines are 4*5
+            printf("addi tp, ra, 24\n"); //these lines are 4*6
+            printf("add t6, tp, x0\n");
             printf("add s11, tp, gp\n"); //update child's beginig  
             printf("jal main\n");
             printf("end: nop\n");
-            //print_symtab(&head);
+            // print_symtab(&head);
         }
     ;
 /*  LIST OF FUNCTIONS  */
@@ -350,7 +356,6 @@ variable_decl
             if(tab_type == VOID){
                 printf("ERROR: DECL DEF ISSUE: parameter '%s' can not be of VOID type\n",tab_name);
             }
-            set_pointer(&head, tab_ind);
             set_dimension(&head, tab_ind, $2, sq_size);
         }
     | _STAR _ID array_member_definition {
@@ -414,15 +419,27 @@ compound_statement
 /* SAVE IN MEMORY */
 /* TO DO -- VAR vs PAR */
 assignment_statement
-    : data _ASSIGN {
-            push("s4", 1);
-        }
-        num_exp _SEMICOLON {
+    : helper_assign num_exp _SEMICOLON {
+            if($1 > 0){
+                printf("ERROR: DATA ISSUE: Assigning numerical expression to a pointer\n");
+            }
             pop("s4", 1);
             printf("add t0, x0, t1\n"); // PUT num_exp ON t1
             printf("sw t0, 0, s4\n");
         }
+    | helper_assign _AMP mem_map _SEMICOLON {
+        if($1 == 0){
+            printf("ERROR: DATA ISSUE: Non-pointer can't recieve an addess\n");
+        }
+        printf("addi t1, s4, 0\n");
+        printf("add t0, x0, t1\n");
+        pop("s4", 1);
+        printf("sw t0, 0, s4\n");
+    }
     | data _ITER _SEMICOLON {
+            if($1 > 0){
+                printf("ERROR: DATA ISSUE: Itterating pointer\n");
+            }
             printf("lw t0, 0, s4\n");
             if($2 == INC){
                 printf("addi t0, t0, 1\n");
@@ -433,6 +450,9 @@ assignment_statement
             printf("sw t0, 0, s4\n");
         }
     | _ITER data _SEMICOLON {
+            if($2 > 0){
+                printf("ERROR: DATA ISSUE: Itterating pointer\n");
+            }
             printf("lw t0, 0, s4\n");
             if($1 == INC){
                 printf("addi t0, t0, 1\n");
@@ -441,6 +461,12 @@ assignment_statement
                 printf("addi t0, t0, -1\n");
             }
             printf("sw t0, 0, s4\n");
+        }
+    ;
+helper_assign
+    : data _ASSIGN {
+            $$ = $1;
+            push("s4", 1);
         }
     ;
 /*  MEMORY MAP  */
@@ -456,9 +482,6 @@ mem_map
             tab_kind = get_kind(&head, tab_ind);
             if(tab_kind != VAR && tab_kind != PAR){
                 printf("ERROR: DATA ISSUE: ID of a non-VAR and non-PAR kind - '%s'\n", tab_name);
-            }
-            if(get_pointer(&head, tab_ind) > 0){
-                printf("ERROR: DATA ISSUE: ID of a pointer type - '%s'\n", tab_name);
             }
 
             dims = get_dimension(&head, tab_ind);
@@ -491,16 +514,28 @@ mem_map
             }
             lab_cnt++;
 
+            if((get_pointer(&head, tab_ind) > 0 && sq_mem == 0) || (sq_mem < sq_arg)){
+                $$ = 1;
+            }
+            else{
+                $$ = 0;
+            }
+
             // s4 = 4 * s4
             printf("add s4, s4, s4\n");
             printf("add s4, s4, s4\n");
 
             printf("add s4, s4, tp\n");
             printf("addi s4, s4, %d\n", memory_map(&head, tab_name, func_ind));
+
+            c_pop(stack, &sp, &sq_mem);
         }
 data
-    : mem_map
+    : mem_map{
+            $$ = $1;
+        }
     | _STAR _ID array_member {
+            $$ = 0;
             strcpy(tab_name, $2);
             func_ind = get_func(&head);
             tab_ind = lookup_symbol_func(&head, tab_name, func_ind);
@@ -553,18 +588,28 @@ data
             printf("addi s4, s4, %d\n", memory_map(&head, tab_name, func_ind));
 
             printf("lw s4, 0, s4\n"); //pointer
+
+            c_pop(stack, &sp, &sq_mem);
         }
     ;
 /*  ARRAY PARAMETERS  */
 /* STORE IN a LOCATION */
 /* TO DO -- BE CAREFULL WITH function_call: MUSN'T BE VOID*/
 array_member
-    : array_member _LSQBRACK num_exp _RSQBRACK {
-            printf("add a%d, t1, x0\n", sq_arg);
-            sq_arg++;
+    : /* empty */ {
+        c_push(stack, &sp, sq_mem);
+        sq_mem = 0;
+    }
+    | array_mem
+    ;
+array_mem
+    : array_mem _LSQBRACK num_exp _RSQBRACK {
+            printf("add a%d, t1, x0\n", sq_mem++);
         }
-    | /*empty*/ {
-            sq_arg = 0;
+    | _LSQBRACK num_exp _RSQBRACK {
+            c_push(stack, &sp, sq_mem);
+            sq_mem = 0;
+            printf("add a%d, t1, x0\n", sq_mem++);
         }
     ;
 /*  ARITHMETICAL OPERATIONS  */
@@ -1077,6 +1122,9 @@ num_exp
             printf("sub t1, x0, t1\n");
         }
     | data _ITER {
+            if($1 > 0){
+                printf("ERROR: DATA ISSUE: Itterating pointer\n");
+            }
             printf("lw t1, 0, s4\n");
             if($2 == INC){
                 printf("addi t2, t1, 1\n");
@@ -1087,6 +1135,9 @@ num_exp
             printf("sw t2, 0, s4\n");
         }
     | _ITER data {
+            if($2 > 0){
+                printf("ERROR: DATA ISSUE: Itterating pointer\n");
+            }
             printf("lw t1, 0, s4\n");
             if($1 == INC){
                 printf("addi t1, t1, 1\n");
@@ -1096,9 +1147,6 @@ num_exp
             }
             printf("sw t1, 0, s4\n");
         }
-    | _AMP mem_map {
-        printf("addi t1, s4, 0\n");
-    }
     ;
 /* HELPER */
 /* PUT ON STACK INDEX */
@@ -1134,6 +1182,9 @@ exp
             $$[1] = 0;
         }
     | data {
+            if($1 > 0){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             $$[1] = 1;
         }
     | function_call {
@@ -1180,12 +1231,17 @@ argument_list
 /* ARGUMENTS OF A FUNCTION CALL */
 /* RECURSION */
 argument
-    : argument _COMMA num_exp {
+    : argument _COMMA argument_type
+    | argument_type
+    ;
+/* ARGUMENT TYPES OF A FUNCTION CALL */
+argument_type
+    : num_exp {
             printf("sw t1, %d, s11\n", 4*args);
             args++;
         }
-    | num_exp {
-            printf("sw t1, %d, s11\n", 4*args);
+    | _AMP mem_map {
+            printf("sw s4, %d, s11\n", 4*args);
             args++;
         }
     ;
@@ -1223,8 +1279,8 @@ condition
 /* SET t1 TO 1 OR 0, DEPENDING ON THE OUTCOME OF THE EXPRESSION */
 cond_cplx
     : helper_cond_simp rel_exp {
-            printf("addi t2, t1, x0\n");
-            printf("addi t1, t3, x0\n");
+            printf("add t2, t1, x0\n");
+            printf("add t1, t3, x0\n");
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1238,8 +1294,8 @@ cond_cplx
             }
         }
     | helper_cond_simp _LPAREN cond_cplx _RPAREN {
-            printf("addi t2, t1, x0\n");
-            printf("addi t1, t3, x0\n");
+            printf("add t2, t1, x0\n");
+            printf("add t1, t3, x0\n");
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1253,8 +1309,8 @@ cond_cplx
             }
         }
     | helper_cond rel_exp {
-            printf("addi t2, t1, x0\n");
-            printf("addi t1, t3, x0\n");
+            printf("add t2, t1, x0\n");
+            printf("add t1, t3, x0\n");
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1268,8 +1324,8 @@ cond_cplx
             }
         }
     | helper_cond _LPAREN cond_cplx _RPAREN {
-            printf("addi t2, t1, x0\n");
-            printf("addi t1, t3, x0\n");
+            printf("add t2, t1, x0\n");
+            printf("add t1, t3, x0\n");
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1287,7 +1343,7 @@ cond_cplx
 /* STORE IN TEMP REG */
 helper_cond_simp
     : rel_exp log_op {
-            printf("addi t3, t1, x0\n");
+            printf("add t3, t1, x0\n");
             $$ = $2;
         } 
     ;
@@ -1295,7 +1351,7 @@ helper_cond_simp
 /* STORE IN TEMP REG */
 helper_cond
     : _LPAREN cond_cplx _RPAREN log_op {
-            printf("addi t3, t1, x0\n");
+            printf("add t3, t1, x0\n");
             $$ = $4;
         }
     ;
@@ -1384,6 +1440,9 @@ for_start
 /* ASSIGN, EXECUTE, BRANCH AND LABEL EXIT */
 for_statement 
     : for_start data _ASSIGN {
+            if($2 > 0){
+                printf("ERROR: DATA ISSUE: Pointers not allowed in for statment header\n");
+            }
             push("s4", 1);
         } num_exp _RPAREN statement {
             pop("s4", 1);
@@ -1397,6 +1456,9 @@ for_statement
             for_depth--;
         }
     | for_start data {
+            if($2 > 0){
+                printf("ERROR: DATA ISSUE: Pointers not allowed in for statment header\n");
+            }
             push("s4", 1);
         } _ITER _RPAREN statement {
             pop("s4", 1);
@@ -1418,6 +1480,9 @@ for_statement
     | for_start {
             push("s4", 1);
         } _ITER data _RPAREN statement {
+            if($4 > 0){
+                printf("ERROR: DATA ISSUE: Pointers not allowed in for statment header\n");
+            }
             pop("s4", 1);
             printf("lw t0, 0, s4\n");
             if($3 == INC){

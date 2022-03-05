@@ -12,7 +12,7 @@ int main () {
       var[i] = 10 * i;
    }
 
-   ptr = var;
+   ptr = &var[0];
 
    for(i = 0; i < MAX; i++){
       *ptr++;

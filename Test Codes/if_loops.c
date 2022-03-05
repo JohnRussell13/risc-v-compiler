@@ -2,6 +2,7 @@
 
 int main(){
     int x;
+    int y;
     int z;
 
     x = 2;
@@ -25,5 +26,14 @@ int main(){
         x = x - 1;
     }
     x++;
+
+
+    x = 0;
+    for(y = 0; y < 5; y++){
+        x++;
+    }
+    
+    y++;
+
     //return 0;
 }
