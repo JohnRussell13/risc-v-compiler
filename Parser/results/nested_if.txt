@@ -1,0 +1,114 @@
+jal start
+main:
+sw ra, 0, tp
+sw gp, -4, s11
+addi t1, x0, 1
+ERROR: DATA ISSUE: Using address value in a numerical expression
+slt t2, t1, x0
+slt t3, x0, t1
+add t1, t2, t3
+beq t1, x0, l1i0l0
+addi t1, x0, 2
+slt t2, t1, x0
+slt t3, x0, t1
+add t1, t2, t3
+beq t1, x0, l2i0l0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 4
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 3
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+beq x0, x0, l2i1l0
+l2i0l0:
+l2i1l0:
+beq x0, x0, l1i1l0
+l1i0l0:
+l1i1l0:
+addi t1, x0, 0
+slt t2, t1, x0
+slt t3, x0, t1
+add t1, t2, t3
+beq t1, x0, l1i0l1
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 4
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 7
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+beq x0, x0, l1i1l1
+l1i0l1:
+l1i1l1:
+addi t1, x0, 1
+ERROR: DATA ISSUE: Using address value in a numerical expression
+slt t2, t1, x0
+slt t3, x0, t1
+add t1, t2, t3
+beq t1, x0, l1i0l2
+addi t1, x0, 1
+ERROR: DATA ISSUE: Using address value in a numerical expression
+slt t2, t1, x0
+slt t3, x0, t1
+add t1, t2, t3
+beq t1, x0, l2i0l1
+addi t1, x0, 0
+slt t2, t1, x0
+slt t3, x0, t1
+add t1, t2, t3
+beq t1, x0, l3i0l0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 4
+lw t0, 0, s4
+addi t0, t0, -1
+sw t0, 0, s4
+beq x0, x0, l3i1l0
+l3i0l0:
+l3i1l0:
+beq x0, x0, l2i1l1
+l2i0l1:
+l2i1l1:
+addi t1, x0, 1
+ERROR: DATA ISSUE: Using address value in a numerical expression
+slt t2, t1, x0
+slt t3, x0, t1
+add t1, t2, t3
+beq t1, x0, l2i0l2
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 4
+lw t0, 0, s4
+addi t0, t0, 1
+sw t0, 0, s4
+beq x0, x0, l2i1l2
+l2i0l2:
+l2i1l2:
+beq x0, x0, l1i1l2
+l1i0l2:
+l1i1l2:
+jalr ra
+start:
+jal count
+count:
+addi gp, x0, 12
+addi tp, ra, 24
+add t6, tp, x0
+add s11, tp, gp
+jal main
+end: nop

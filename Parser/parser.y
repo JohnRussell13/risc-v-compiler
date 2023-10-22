@@ -103,7 +103,7 @@
 /* TYPE OF VALUE THAT A GIVEN RULE HAS TO RETURN */
 /* POSSIBLE TYPES ARE GIVEN IN THE %union ABOVE */
 /* $$ IS USED TO SET A VALUE */
-%type <i> type literal function_call ar_op log_op helper_num_exp helper_cond helper_cond_simp mem_map data helper_assign
+%type <i> type literal function_call ar_op log_op num_exp helper_num_exp helper_cond helper_cond_simp mem_map data helper_assign
 %type <ii> exp
 %type <iii> helper_exp
 %type <d> array_member_definition
@@ -420,6 +420,9 @@ compound_statement
 /* TO DO -- VAR vs PAR */
 assignment_statement
     : helper_assign num_exp _SEMICOLON {
+            if($2 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             if($1 > 0){
                 printf("ERROR: DATA ISSUE: Assigning numerical expression to a pointer\n");
             }
@@ -489,36 +492,39 @@ mem_map
             printf("add s4, x0, x0\n");
 
             for(sq_arg = 0; sq_arg < MAX_DIM && dims[sq_arg] > 0; sq_arg++){
-                sq_mul = 1;
-                printf("add s1, a%d, x0\n", sq_arg);
-                for(sq_subarg = sq_arg + 1; sq_subarg < MAX_DIM && dims[sq_subarg] > 0; sq_subarg++){
-                    sq_mul = sq_mul * dims[sq_subarg];
-                }
-                printf("addi s2, x0, %d\n", sq_mul);
-
-                // should use MUL and DIV which are in RISC-V
-                printf("addi s3, x0, 0\n");
-                printf("blt s2, x0, l%ds2q%d\n", lab_cnt, sq_arg);
-                printf("l%dsq%d:\n", lab_cnt, sq_arg);
-                printf("beq s2, x0, l%ds1q%d\n", lab_cnt, sq_arg);
-                printf("addi s2, s2, -1\n");
-                printf("add s3, s3, s1\n");
-                printf("beq x0, x0, l%dsq%d\n", lab_cnt, sq_arg);
-                printf("l%ds2q%d:\n", lab_cnt, sq_arg);
-                printf("beq s2, x0, l%ds1q%d\n", lab_cnt, sq_arg);
-                printf("addi s2, s2, 1\n");
-                printf("sub s3, s3, s1\n");
-                printf("beq x0, x0, l%ds2q%d\n", lab_cnt, sq_arg);
-                printf("l%ds1q%d:\n", lab_cnt, sq_arg);
-                printf("add s4, s4, s3\n");
             }
-            lab_cnt++;
 
             if((get_pointer(&head, tab_ind) > 0 && sq_mem == 0) || (sq_mem < sq_arg)){
                 $$ = 1;
             }
             else{
                 $$ = 0;
+
+                for(sq_arg = 0; sq_arg < MAX_DIM && dims[sq_arg] > 0; sq_arg++){
+                    sq_mul = 1;
+                    printf("add s1, a%d, x0\n", sq_arg);
+                    for(sq_subarg = sq_arg + 1; sq_subarg < MAX_DIM && dims[sq_subarg] > 0; sq_subarg++){
+                        sq_mul = sq_mul * dims[sq_subarg];
+                    }
+                    printf("addi s2, x0, %d\n", sq_mul);
+
+                    // should use MUL and DIV which are in RISC-V
+                    printf("addi s3, x0, 0\n");
+                    printf("blt s2, x0, l%ds2q%d\n", lab_cnt, sq_arg);
+                    printf("l%dsq%d:\n", lab_cnt, sq_arg);
+                    printf("beq s2, x0, l%ds1q%d\n", lab_cnt, sq_arg);
+                    printf("addi s2, s2, -1\n");
+                    printf("add s3, s3, s1\n");
+                    printf("beq x0, x0, l%dsq%d\n", lab_cnt, sq_arg);
+                    printf("l%ds2q%d:\n", lab_cnt, sq_arg);
+                    printf("beq s2, x0, l%ds1q%d\n", lab_cnt, sq_arg);
+                    printf("addi s2, s2, 1\n");
+                    printf("sub s3, s3, s1\n");
+                    printf("beq x0, x0, l%ds2q%d\n", lab_cnt, sq_arg);
+                    printf("l%ds1q%d:\n", lab_cnt, sq_arg);
+                    printf("add s4, s4, s3\n");
+                }
+                lab_cnt++;
             }
 
             // s4 = 4 * s4
@@ -604,9 +610,15 @@ array_member
     ;
 array_mem
     : array_mem _LSQBRACK num_exp _RSQBRACK {
+            if($3 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             printf("add a%d, t1, x0\n", sq_mem++);
         }
     | _LSQBRACK num_exp _RSQBRACK {
+            if($2 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             c_push(stack, &sp, sq_mem);
             sq_mem = 0;
             printf("add a%d, t1, x0\n", sq_mem++);
@@ -671,13 +683,18 @@ num_exp
                     printf("lw t1, 0, s0\n");
                     break;
             }
+            $$ = $1[0];
         }
     | helper_exp exp {
+            $$ = 0;
             switch($2[1]){
                 case 0:
                     printf("addi t2, x0, %d\n", $2[0]);
                     break;
                 case 1:
+                    if($2[0] == 1){
+                        printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+                    }
                     printf("lw t2, 0, s4\n");
                     break;
                 case 2:
@@ -791,6 +808,10 @@ num_exp
             }
         }
     | helper_exp _LPAREN num_exp _RPAREN {
+            if($3 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
+            $$ = 0;
             printf("add t2, x0, t1\n");
             switch($1[1]){
                 case 0:
@@ -897,12 +918,16 @@ num_exp
             }
         }
     | helper_num_exp exp {
+            $$ = 0;
             pop("t1", 1);
             switch($2[1]){
                 case 0:
                     printf("addi t2, x0, %d\n", $2[0]);
                     break;
                 case 1:
+                    if($2[0] == 1){
+                        printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+                    }
                     printf("lw t2, 0, s4\n");
                     break;
                 case 2:
@@ -1001,6 +1026,10 @@ num_exp
             }
         }
     | helper_num_exp _LPAREN num_exp _RPAREN {
+            if($3 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
+            $$ = 0;
             printf("add t2, x0, t1\n");
             pop("t1", 1);
             switch($1){
@@ -1095,11 +1124,15 @@ num_exp
             }
         }
     | _PLUS exp {
+            $$ = 0;
             switch($2[1]){
                 case 0:
                     printf("addi t1, x0, %d\n", $2[0]);
                     break;
                 case 1:
+                    if($2[0] == 1){
+                        printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+                    }
                     printf("lw t1, 0, s4\n");
                     break;
                 case 2:
@@ -1108,11 +1141,15 @@ num_exp
             }
         }
     | _MINUS exp {
+            $$ = 0;
             switch($2[1]){
                 case 0:
                     printf("addi t1, x0, %d\n", $2[0]);
                     break;
                 case 1:
+                    if($2[0] == 1){
+                        printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+                    }
                     printf("lw t1, 0, s4\n");
                     break;
                 case 2:
@@ -1122,6 +1159,10 @@ num_exp
             printf("sub t1, x0, t1\n");
         }
     | data _ITER {
+            if($1 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
+            $$ = 0;
             if($1 > 0){
                 printf("ERROR: DATA ISSUE: Itterating pointer\n");
             }
@@ -1135,6 +1176,10 @@ num_exp
             printf("sw t2, 0, s4\n");
         }
     | _ITER data {
+            if($2 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
+            $$ = 0;
             if($2 > 0){
                 printf("ERROR: DATA ISSUE: Itterating pointer\n");
             }
@@ -1157,6 +1202,9 @@ helper_exp
                     push("s4", 1);
                     break;
                 case 2:
+                    if($1[0] == 1){
+                        printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+                    }
                     push("s0", 1);
                     break;
             }
@@ -1170,6 +1218,9 @@ helper_exp
 /* PUSH ON STACK */
 helper_num_exp
     : _LPAREN num_exp _RPAREN ar_op {
+            if($2 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             push("t1", 1);
             $$ = $4;
         }
@@ -1182,8 +1233,10 @@ exp
             $$[1] = 0;
         }
     | data {
+            $$[0] = 0;
             if($1 > 0){
-                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+                $$[0] = 1;
+                // printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
             }
             $$[1] = 1;
         }
@@ -1237,10 +1290,16 @@ argument
 /* ARGUMENT TYPES OF A FUNCTION CALL */
 argument_type
     : num_exp {
+            if($1 == 1){
+                printf("lw s4, 0, s4\n");
+            }
             printf("sw t1, %d, s11\n", 4*args);
             args++;
         }
     | _AMP mem_map {
+            if($2 == 1){
+                printf("ERROR: Using an address of a pointer\n");
+            }
             printf("sw s4, %d, s11\n", 4*args);
             args++;
         }
@@ -1280,7 +1339,7 @@ condition
 cond_cplx
     : helper_cond_simp rel_exp {
             printf("add t2, t1, x0\n");
-            printf("add t1, t3, x0\n");
+            pop("t1", 1);
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1295,7 +1354,7 @@ cond_cplx
         }
     | helper_cond_simp _LPAREN cond_cplx _RPAREN {
             printf("add t2, t1, x0\n");
-            printf("add t1, t3, x0\n");
+            pop("t1", 1);
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1310,7 +1369,7 @@ cond_cplx
         }
     | helper_cond rel_exp {
             printf("add t2, t1, x0\n");
-            printf("add t1, t3, x0\n");
+            pop("t1", 1);
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1325,7 +1384,7 @@ cond_cplx
         }
     | helper_cond _LPAREN cond_cplx _RPAREN {
             printf("add t2, t1, x0\n");
-            printf("add t1, t3, x0\n");
+            pop("t1", 1);
             switch($1){
                 case(AND):
                     printf("and t1, t1, t2\n");
@@ -1343,7 +1402,7 @@ cond_cplx
 /* STORE IN TEMP REG */
 helper_cond_simp
     : rel_exp log_op {
-            printf("add t3, t1, x0\n");
+            push("t1", 1);
             $$ = $2;
         } 
     ;
@@ -1351,7 +1410,7 @@ helper_cond_simp
 /* STORE IN TEMP REG */
 helper_cond
     : _LPAREN cond_cplx _RPAREN log_op {
-            printf("add t3, t1, x0\n");
+            push("t1", 1);
             $$ = $4;
         }
     ;
@@ -1361,6 +1420,9 @@ rel_exp
     : num_exp _RELOP {
             printf("add t4, x0, t1\n");
         } num_exp {
+            if($1 == 1 || $4 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             printf("add t2, x0, t1\n");
             printf("add t1, x0, t4\n");
             switch($2){
@@ -1406,6 +1468,9 @@ rel_exp
            }
         }
     | num_exp {
+            if($1 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             printf("slt t2, t1, x0\n");
             printf("slt t3, x0, t1\n");
             printf("add t1, t2, t3\n");
@@ -1445,6 +1510,9 @@ for_statement
             }
             push("s4", 1);
         } num_exp _RPAREN statement {
+            if($5 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             pop("s4", 1);
             printf("add t0, x0, t1\n"); //PUT num_exp ON t1
             printf("sw t0, 0, s4\n");
@@ -1505,6 +1573,9 @@ for_statement
 /* CHECK TYPE, SET THE VALUE AND JUMP */
 return_statement
     : _RETURN num_exp _SEMICOLON {
+            if($2 == 1){
+                printf("ERROR: DATA ISSUE: Using address value in a numerical expression\n");
+            }
             tab_ind = get_func(&head);
             tab_type = get_type(&head, tab_ind);
             if(tab_type == VOID){

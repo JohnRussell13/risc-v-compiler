@@ -1,0 +1,57 @@
+jal start
+ptr:
+sw ra, 0, tp
+sw gp, -4, s11
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 4
+lw s4, 0, s4
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 4
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+jalr ra
+main:
+sw ra, 0, tp
+sw gp, -4, s11
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 8
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 5
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 8
+sw s4, 4, s11
+add tp, tp, gp
+addi gp, x0, 12
+add s11, s11, gp
+jal ptr
+sub s11, s11, gp
+lw gp, -4, s11
+sub tp, tp, gp
+lw ra, 0, tp
+jalr ra
+start:
+jal count
+count:
+addi gp, x0, 16
+addi tp, ra, 24
+add t6, tp, x0
+add s11, tp, gp
+jal main
+end: nop

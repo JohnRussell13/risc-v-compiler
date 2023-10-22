@@ -1,0 +1,667 @@
+jal start
+main:
+sw ra, 0, tp
+sw gp, -4, s11
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 0
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+l1f0l0:
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add t4, x0, t1
+addi t1, x0, 3
+add t2, x0, t1
+add t1, x0, t4
+slt t1, t1, t2
+beq t1, x0, l1f1l0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 0
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+l2f0l0:
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add t4, x0, t1
+addi t1, x0, 3
+add t2, x0, t1
+add t1, x0, t4
+slt t1, t1, t2
+beq t1, x0, l2f1l0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add a0, t1, x0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add a1, t1, x0
+add s4, x0, x0
+add s1, a0, x0
+addi s2, x0, 3
+addi s3, x0, 0
+blt s2, x0, l8s2q0
+l8sq0:
+beq s2, x0, l8s1q0
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l8sq0
+l8s2q0:
+beq s2, x0, l8s1q0
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l8s2q0
+l8s1q0:
+add s4, s4, s3
+add s1, a1, x0
+addi s2, x0, 1
+addi s3, x0, 0
+blt s2, x0, l8s2q1
+l8sq1:
+beq s2, x0, l8s1q1
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l8sq1
+l8s2q1:
+beq s2, x0, l8s1q1
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l8s2q1
+l8s1q1:
+add s4, s4, s3
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 4
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t2, 0, s4
+addi sp, sp, 4
+lw s4, 0, sp
+lw t1, 0, s4
+add t1, t1, t2
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add a0, t1, x0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add a1, t1, x0
+add s4, x0, x0
+add s1, a0, x0
+addi s2, x0, 3
+addi s3, x0, 0
+blt s2, x0, l13s2q0
+l13sq0:
+beq s2, x0, l13s1q0
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l13sq0
+l13s2q0:
+beq s2, x0, l13s1q0
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l13s2q0
+l13s1q0:
+add s4, s4, s3
+add s1, a1, x0
+addi s2, x0, 1
+addi s3, x0, 0
+blt s2, x0, l13s2q1
+l13sq1:
+beq s2, x0, l13s1q1
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l13sq1
+l13s2q1:
+beq s2, x0, l13s1q1
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l13s2q1
+l13s1q1:
+add s4, s4, s3
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 40
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t2, 0, s4
+addi t1, x0, 3
+addi t3, x0, 0
+blt t2, x0, l15m2
+l15m:
+beq t2, x0, l15m1
+addi t2, t2, -1
+add t3, t3, t1
+beq x0, x0, l15m
+l15m2:
+beq t2, x0, l15m1
+addi t2, t2, 1
+sub t3, t3, t1
+beq x0, x0, l15m2
+l15m1:
+add t1, t3, x0
+sw t1, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+addi sp, sp, 4
+lw t1, 0, sp
+lw t2, 0, s4
+add t1, t1, t2
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add a0, t1, x0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add a1, t1, x0
+add s4, x0, x0
+add s1, a0, x0
+addi s2, x0, 3
+addi s3, x0, 0
+blt s2, x0, l19s2q0
+l19sq0:
+beq s2, x0, l19s1q0
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l19sq0
+l19s2q0:
+beq s2, x0, l19s1q0
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l19s2q0
+l19s1q0:
+add s4, s4, s3
+add s1, a1, x0
+addi s2, x0, 1
+addi s3, x0, 0
+blt s2, x0, l19s2q1
+l19sq1:
+beq s2, x0, l19s1q1
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l19sq1
+l19s2q1:
+beq s2, x0, l19s1q1
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l19s2q1
+l19s1q1:
+add s4, s4, s3
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 76
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 0
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+addi sp, sp, 4
+lw s4, 0, sp
+lw t0, 0, s4
+addi t1, t0, 1
+sw t1, 0, s4
+beq x0 x0, l2f0l0
+l2f1l0:
+addi sp, sp, 4
+lw s4, 0, sp
+lw t0, 0, s4
+addi t1, t0, 1
+sw t1, 0, s4
+beq x0 x0, l1f0l0
+l1f1l0:
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 0
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+l1f0l1:
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add t4, x0, t1
+addi t1, x0, 3
+add t2, x0, t1
+add t1, x0, t4
+slt t1, t1, t2
+beq t1, x0, l1f1l1
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 0
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+l2f0l1:
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add t4, x0, t1
+addi t1, x0, 3
+add t2, x0, t1
+add t1, x0, t4
+slt t1, t1, t2
+beq t1, x0, l2f1l1
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 120
+sw s4, 0, sp
+addi sp, sp, -4
+addi t1, x0, 0
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+l3f0l0:
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 120
+lw t1, 0, s4
+add t4, x0, t1
+addi t1, x0, 3
+add t2, x0, t1
+add t1, x0, t4
+slt t1, t1, t2
+beq t1, x0, l3f1l0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 120
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add a0, t1, x0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add a1, t1, x0
+add s4, x0, x0
+add s1, a0, x0
+addi s2, x0, 3
+addi s3, x0, 0
+blt s2, x0, l31s2q0
+l31sq0:
+beq s2, x0, l31s1q0
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l31sq0
+l31s2q0:
+beq s2, x0, l31s1q0
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l31s2q0
+l31s1q0:
+add s4, s4, s3
+add s1, a1, x0
+addi s2, x0, 1
+addi s3, x0, 0
+blt s2, x0, l31s2q1
+l31sq1:
+beq s2, x0, l31s1q1
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l31sq1
+l31s2q1:
+beq s2, x0, l31s1q1
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l31s2q1
+l31s1q1:
+add s4, s4, s3
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 76
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add a0, t1, x0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add a1, t1, x0
+add s4, x0, x0
+add s1, a0, x0
+addi s2, x0, 3
+addi s3, x0, 0
+blt s2, x0, l34s2q0
+l34sq0:
+beq s2, x0, l34s1q0
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l34sq0
+l34s2q0:
+beq s2, x0, l34s1q0
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l34s2q0
+l34s1q0:
+add s4, s4, s3
+add s1, a1, x0
+addi s2, x0, 1
+addi s3, x0, 0
+blt s2, x0, l34s2q1
+l34sq1:
+beq s2, x0, l34s1q1
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l34sq1
+l34s2q1:
+beq s2, x0, l34s1q1
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l34s2q1
+l34s1q1:
+add s4, s4, s3
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 76
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 112
+lw t1, 0, s4
+add a0, t1, x0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 120
+lw t1, 0, s4
+add a1, t1, x0
+add s4, x0, x0
+add s1, a0, x0
+addi s2, x0, 3
+addi s3, x0, 0
+blt s2, x0, l37s2q0
+l37sq0:
+beq s2, x0, l37s1q0
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l37sq0
+l37s2q0:
+beq s2, x0, l37s1q0
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l37s2q0
+l37s1q0:
+add s4, s4, s3
+add s1, a1, x0
+addi s2, x0, 1
+addi s3, x0, 0
+blt s2, x0, l37s2q1
+l37sq1:
+beq s2, x0, l37s1q1
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l37sq1
+l37s2q1:
+beq s2, x0, l37s1q1
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l37s2q1
+l37s1q1:
+add s4, s4, s3
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 4
+sw s4, 0, sp
+addi sp, sp, -4
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 120
+lw t1, 0, s4
+add a0, t1, x0
+add s4, x0, x0
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 116
+lw t1, 0, s4
+add a1, t1, x0
+add s4, x0, x0
+add s1, a0, x0
+addi s2, x0, 3
+addi s3, x0, 0
+blt s2, x0, l40s2q0
+l40sq0:
+beq s2, x0, l40s1q0
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l40sq0
+l40s2q0:
+beq s2, x0, l40s1q0
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l40s2q0
+l40s1q0:
+add s4, s4, s3
+add s1, a1, x0
+addi s2, x0, 1
+addi s3, x0, 0
+blt s2, x0, l40s2q1
+l40sq1:
+beq s2, x0, l40s1q1
+addi s2, s2, -1
+add s3, s3, s1
+beq x0, x0, l40sq1
+l40s2q1:
+beq s2, x0, l40s1q1
+addi s2, s2, 1
+sub s3, s3, s1
+beq x0, x0, l40s2q1
+l40s1q1:
+add s4, s4, s3
+add s4, s4, s4
+add s4, s4, s4
+add s4, s4, tp
+addi s4, s4, 40
+lw t2, 0, s4
+addi sp, sp, 4
+lw s4, 0, sp
+lw t1, 0, s4
+addi t3, x0, 0
+blt t2, x0, l41m2
+l41m:
+beq t2, x0, l41m1
+addi t2, t2, -1
+add t3, t3, t1
+beq x0, x0, l41m
+l41m2:
+beq t2, x0, l41m1
+addi t2, t2, 1
+sub t3, t3, t1
+beq x0, x0, l41m2
+l41m1:
+add t1, t3, x0
+add t2, x0, t1
+addi sp, sp, 4
+lw s4, 0, sp
+lw t1, 0, s4
+add t1, t1, t2
+addi sp, sp, 4
+lw s4, 0, sp
+add t0, x0, t1
+sw t0, 0, s4
+addi sp, sp, 4
+lw s4, 0, sp
+lw t0, 0, s4
+addi t1, t0, 1
+sw t1, 0, s4
+beq x0 x0, l3f0l0
+l3f1l0:
+addi sp, sp, 4
+lw s4, 0, sp
+lw t0, 0, s4
+addi t1, t0, 1
+sw t1, 0, s4
+beq x0 x0, l2f0l1
+l2f1l1:
+addi sp, sp, 4
+lw s4, 0, sp
+lw t0, 0, s4
+addi t1, t0, 1
+sw t1, 0, s4
+beq x0 x0, l1f0l1
+l1f1l1:
+jalr ra
+start:
+jal count
+count:
+addi gp, x0, 128
+addi tp, ra, 24
+add t6, tp, x0
+add s11, tp, gp
+jal main
+end: nop

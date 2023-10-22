@@ -42,12 +42,10 @@ void sort(int *a, int *b, int low, int high) {
    
    if(low < high) {
       mid = (low + high) / 2;
-      sort(&a[0], &b[0], low, mid);
-      sort(&a[0], &b[0], mid + 1, high);
-      merging(&a[0], &b[0], low, mid, high);
-   } else { 
-      return;
-   }   
+      sort(a, b, low, mid);
+      sort(a, b, mid + 1, high);
+      merging(a, b, low, mid, high);
+   }
 }
 
 int main() { 
@@ -60,5 +58,5 @@ int main() {
     for(i = 0; i < 3; i++){
         a[i] = 10-i;
     }
-    sort(&a[0], &b[0], 0, max);
+    sort(a, b, 0, max);
 }
